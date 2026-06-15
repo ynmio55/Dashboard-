@@ -19,6 +19,10 @@ import './styles.css';
 
 const CSV_URL =
   'https://docs.google.com/spreadsheets/d/1YsO7jR_0Z_xBef-03ACPYlIJ8Pb47FtdNds0ObrRhoE/gviz/tq?tqx=out:csv&gid=1870394303';
+const DEPT_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/1YsO7jR_0Z_xBef-03ACPYlIJ8Pb47FtdNds0ObrRhoE/gviz/tq?tqx=out:csv&gid=128247472';
+const BODY_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/1YsO7jR_0Z_xBef-03ACPYlIJ8Pb47FtdNds0ObrRhoE/gviz/tq?tqx=out:csv&gid=182615786';
 
 const BODY_PARTS = [
   { key: 'ไหล่', column: '2.ไหล่ รวม', x: 48, y: 24, w: 26, h: 12, rx: 8 },
@@ -107,59 +111,39 @@ function analyze(rows) {
   const post = rows.filter((row) => row['Pre-test / Post-test'] === 'Post-test');
   const knowledgeRows = rows.filter((row) => row.Kรวม !== '');
   const behaviorRows = rows.filter((row) => row.Beเฉลี่ย !== '');
-  const bodyRows = rows.filter((row) => row['Pre-test / Post-test'] === 'Pre-test');
-
-  const bodyParts = BODY_PARTS.map((part) => {
-    const hit = bodyRows.filter((row) => toNumber(row[part.column]) > 0).length;
-    const pct = bodyRows.length ? (hit / bodyRows.length) * 100 : 0;
-    const average = avg(bodyRows.map((row) => row[part.column]));
-    return { ...part, hit, pct, average };
-  }).sort((a, b) => b.pct - a.pct);
 
   const knowledgeItems = Array.from({ length: 10 }, (_, i) => {
-    const key = `ข้อ${i + 1}`;
-    const sourceHeader = rows[0]?.__headers?.[80 + i] || key;
-    const score = avg(knowledgeRows.map((row) => row[key])) * 100;
-    return { key, label: shortQuestion(sourceHeader), score };
-  });
+  const key = `ข้อ${i + 1}`;
+  const sourceHeader = rows[0]?.__headers?.[80 + i] || key;
+  const score = avg(knowledgeRows.map((row) => row[key])) * 100;
+  return { key, label: shortQuestion(sourceHeader), score };
+}).sort((a, b) => b.score - a.score);
 
-  const behaviorItems = Array.from({ length: 10 }, (_, i) => {
-    const key = `Be${i + 1}`;
-    const sourceHeader = rows[0]?.__headers?.[89 + i] || key;
-    const score = avg(behaviorRows.map((row) => row[key]));
-    return { key, label: shortQuestion(sourceHeader), score };
-  });
+const behaviorItems = Array.from({ length: 10 }, (_, i) => {
+  const key = `Be${i + 1}`;
+  const sourceHeader = rows[0]?.__headers?.[89 + i] || key;
+  const score = avg(behaviorRows.map((row) => row[key]));
+  return { key, label: shortQuestion(sourceHeader), score };
+}).sort((a, b) => b.score - a.score);
 
-  const departments = Object.entries(countBy(rows, 'หน่วยงานที่สังกัด  '))
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 8);
+// Departments are now fetched separately from the pivot table
+const workHours = Object.entries(countBy(rows, 'ระยะเวลาที่ใช้คอมพิวเตอร์โดยเฉลี่ยต่อวัน  '))
+  .map(([label, value]) => ({ label, value }))
+  .sort((a, b) => b.value - a.value);
 
-  const workHours = Object.entries(countBy(rows, 'ระยะเวลาที่ใช้คอมพิวเตอร์โดยเฉลี่ยต่อวัน  '))
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value);
+const currentMsds = rows.filter((row) => row['ในระยะเวลา 7 วันที่ผ่านมา ท่านเคยมีอาการ ปวด/ชา/เมื่อยล้า ตามส่วนของร่างกายข้างต้น ที่เกิดจากการทำงานหรือไม่'] === 'เคย').length;
+const departmentCount = new Set(rows.map((row) => row['หน่วยงานที่สังกัด  ']?.trim()).filter(Boolean)).size;
 
-  const highestBody = bodyParts[0] || { key: '-', pct: 0 };
-  const knowledgeAvg = avg(knowledgeRows.map((row) => row.Kรวม));
-  const behaviorAvg = avg(behaviorRows.map((row) => row.Beเฉลี่ย));
-  const currentMsds = rows.filter((row) => row['ในระยะเวลา 7 วันที่ผ่านมา ท่านเคยมีอาการ ปวด/ชา/เมื่อยล้า ตามส่วนของร่างกายข้างต้น ที่เกิดจากการทำงานหรือไม่'] === 'เคย').length;
-  const departmentCount = new Set(rows.map((row) => row['หน่วยงานที่สังกัด  ']?.trim()).filter(Boolean)).size;
-
-  return {
-    total: rows.length,
-    pre: pre.length,
-    post: post.length,
-    knowledgeAvg,
-    behaviorAvg,
-    bodyParts,
-    departments,
-    workHours,
-    knowledgeItems,
-    behaviorItems,
-    currentMsdsPct: rows.length ? (currentMsds / rows.length) * 100 : 0,
-    highestBody,
-    departmentCount,
-  };
+return {
+  total: rows.length,
+  pre: pre.length,
+  post: post.length,
+  workHours,
+  knowledgeItems,
+  behaviorItems,
+  currentMsdsPct: rows.length ? (currentMsds / rows.length) * 100 : 0,
+  departmentCount,
+};
 }
 
 function rowsFromCsv(csv) {
@@ -177,7 +161,7 @@ function rowsFromCsv(csv) {
 
 function MetricCard({ icon: Icon, title, value, sub, color }) {
   return (
-    <section 
+    <section
       className="flex flex-col justify-between p-6 bg-white rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group"
       style={{ borderLeftColor: color, borderLeftWidth: '6px' }}
     >
@@ -197,7 +181,7 @@ function MetricCard({ icon: Icon, title, value, sub, color }) {
 
 function BarList({ data, maxValue, unit = '%', compact = false }) {
   const tones = [
-    'from-rose-500 to-rose-400', 'from-orange-500 to-orange-400', 
+    'from-rose-500 to-rose-400', 'from-orange-500 to-orange-400',
     'from-amber-500 to-amber-400', 'from-yellow-500 to-yellow-400',
     'from-emerald-500 to-emerald-400', 'from-blue-500 to-blue-400',
     'from-indigo-500 to-indigo-400', 'from-cyan-500 to-cyan-400',
@@ -214,9 +198,9 @@ function BarList({ data, maxValue, unit = '%', compact = false }) {
           <div className="grid grid-cols-[minmax(120px,200px)_1fr_70px] gap-4 items-center group" key={item.label || item.key}>
             <span className="text-sm font-medium text-slate-600 truncate group-hover:text-slate-900 transition-colors">{item.label || item.key}</span>
             <div className="h-4 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-              <div 
-                className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-1000 ease-out`} 
-                style={{ width: `${Math.max(width, 2)}%` }} 
+              <div
+                className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-1000 ease-out`}
+                style={{ width: `${Math.max(width, 2)}%` }}
               />
             </div>
             <b className="text-sm font-semibold text-slate-700 text-right">
@@ -261,9 +245,9 @@ function BodyMap({ parts }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6">
-      
+
       <div className="relative flex flex-col items-center justify-center bg-slate-50/30 p-8 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-        
+
         <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'radial-gradient(#94a3b8 2px, transparent 2px)', backgroundSize: '24px 24px' }}></div>
 
         <div className="relative z-10 mb-8 bg-white/90 backdrop-blur-md px-6 py-2.5 rounded-full border border-slate-200/50 shadow-sm flex items-center gap-2.5 text-sm font-medium text-slate-600">
@@ -311,13 +295,13 @@ function BodyMap({ parts }) {
       </div>
 
       <div className="flex flex-col gap-6">
-        
+
         <div className="flex-1 bg-slate-50/50 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center p-8 text-center transition-all duration-500">
           {!selected ? (
             <div className="animate-in fade-in zoom-in duration-500">
               <div className="text-5xl mb-4 animate-[bounce_2s_infinite]">👉</div>
               <p className="text-slate-500 font-medium leading-relaxed">
-                คลิกที่ตำแหน่งบนแผนที่<br/>เพื่อดูรายละเอียด
+                คลิกที่ตำแหน่งบนแผนที่<br />เพื่อดูรายละเอียด
               </p>
             </div>
           ) : (
@@ -368,7 +352,7 @@ function RowDetailModal({ row, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
-      <div 
+      <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
@@ -377,20 +361,20 @@ function RowDetailModal({ row, onClose }) {
             <h2 className="text-xl font-bold text-slate-800">ข้อมูลผู้ตอบแบบสอบถาม (ลำดับที่ {row.__rowNumber - 1})</h2>
             <p className="text-sm text-slate-500 mt-1">ประทับเวลา: {row['ประทับเวลา']}</p>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
           >
             <X size={24} />
           </button>
         </div>
-        
+
         <div className="overflow-y-auto p-6 space-y-4 flex-grow custom-scrollbar">
           {row.__headers.map((header, idx) => {
             if (!header) return null;
             const value = row[header];
             if (!value) return null; // Skip empty answers to keep it clean
-            
+
             return (
               <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-6 p-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-colors">
                 <div className="sm:w-1/2 font-semibold text-slate-700 text-sm">{header}</div>
@@ -399,9 +383,9 @@ function RowDetailModal({ row, onClose }) {
             );
           })}
         </div>
-        
+
         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
-          <button 
+          <button
             onClick={onClose}
             className="px-6 py-2 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-full transition-colors shadow-sm"
           >
@@ -433,19 +417,18 @@ function ResponseTable({ rows, limit, onRowClick }) {
         </thead>
         <tbody className="divide-y divide-slate-100">
           {visibleRows.map((row) => (
-            <tr 
-              key={`${row.__rowNumber}-${row['ประทับเวลา']}`} 
+            <tr
+              key={`${row.__rowNumber}-${row['ประทับเวลา']}`}
               className="hover:bg-sky-50 transition-colors cursor-pointer"
               onClick={() => onRowClick && onRowClick(row)}
             >
               <td className="px-6 py-4 font-medium text-slate-900">{row.__rowNumber - 1}</td>
               <td className="px-6 py-4 text-slate-500">{row['ประทับเวลา'] || '-'}</td>
               <td className="px-6 py-4">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                  row['Pre-test / Post-test'] === 'Post-test' 
-                    ? 'bg-amber-100 text-amber-800' 
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${row['Pre-test / Post-test'] === 'Post-test'
+                    ? 'bg-amber-100 text-amber-800'
                     : 'bg-sky-100 text-sky-800'
-                }`}>
+                  }`}>
                   {row['Pre-test / Post-test'] || '-'}
                 </span>
               </td>
@@ -464,6 +447,12 @@ function ResponseTable({ rows, limit, onRowClick }) {
 
 function App() {
   const [rows, setRows] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [bodyData, setBodyData] = useState({
+    parts: BODY_PARTS.map(p => ({ ...p, hit: 0, pct: 0 })),
+    knowledgeAvg: 0, knowledgeLevel: '',
+    behaviorAvg: 0, behaviorLevel: ''
+  });
   const [status, setStatus] = useState('กำลังโหลดข้อมูลจาก Google Sheets...');
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedRow, setSelectedRow] = useState(null);
@@ -471,9 +460,59 @@ function App() {
   async function loadData() {
     setStatus('กำลังโหลดข้อมูลจาก Google Sheets...');
     try {
-      const response = await fetch(CSV_URL);
-      const text = await response.text();
-      setRows(rowsFromCsv(text));
+      const [mainRes, deptRes, bodyRes] = await Promise.all([
+        fetch(CSV_URL),
+        fetch(DEPT_CSV_URL),
+        fetch(BODY_CSV_URL)
+      ]);
+      const mainText = await mainRes.text();
+      const deptText = await deptRes.text();
+      const bodyText = await bodyRes.text();
+
+      setRows(rowsFromCsv(mainText));
+
+      const deptData = rowsFromCsv(deptText)
+        .map(row => ({
+          label: row['หน่วยงานที่สังกัด  '] || row[Object.keys(row)[0]],
+          value: toNumber(row['COUNTA ของ ชื่อ-สกุล'] || row[Object.keys(row)[1]])
+        }))
+        .filter(item => item.label && item.label !== 'ผลรวม' && item.value > 0)
+        .sort((a, b) => b.value - a.value);
+
+      setDepartments(deptData);
+
+      const bodyCsv = parseCsv(bodyText);
+      let kAvg = 0, kLevel = '';
+      let bAvg = 0, bLevel = '';
+
+      bodyCsv.forEach(row => {
+        const kIdx = row.indexOf('Avg Knowledge');
+        if (kIdx !== -1) { kAvg = toNumber(row[kIdx + 1]); kLevel = row[kIdx + 2]; }
+
+        const bIdx = row.indexOf('Avg Behavior');
+        if (bIdx !== -1) { bAvg = toNumber(row[bIdx + 1]); bLevel = row[bIdx + 2]; }
+      });
+
+      const bodyPartsData = BODY_PARTS.map(part => {
+        const row = bodyCsv.find(r => r[0] && r[0].includes(part.key));
+        if (row) {
+          const total = toNumber(row[6]);
+          const score0 = toNumber(row[1]);
+          const hit = total - score0;
+          const pct = total ? (hit / total) * 100 : 0;
+          return { ...part, hit, pct };
+        }
+        return { ...part, hit: 0, pct: 0 };
+      }).sort((a, b) => b.pct - a.pct);
+
+      setBodyData({
+        parts: bodyPartsData,
+        knowledgeAvg: kAvg,
+        knowledgeLevel: kLevel,
+        behaviorAvg: bAvg,
+        behaviorLevel: bLevel
+      });
+
       setStatus(`อัปเดตล่าสุด: ${new Date().toLocaleString('th-TH')}`);
     } catch (error) {
       setStatus(`โหลดข้อมูลไม่สำเร็จ: ${error.message}`);
@@ -485,8 +524,8 @@ function App() {
   }, []);
 
   const summary = useMemo(() => analyze(rows), [rows]);
-  const maxBody = Math.max(...summary.bodyParts.map((item) => item.pct), 1);
-  const maxDept = Math.max(...summary.departments.map((item) => item.value), 1);
+  const maxBody = Math.max(...bodyData.parts.map((item) => item.pct), 1);
+  const maxDept = Math.max(...departments.map((item) => item.value), 1);
 
   return (
     <main className="min-h-screen bg-slate-50 pb-20 font-sans">
@@ -523,28 +562,27 @@ function App() {
             ['departments', Building2, 'รายหน่วยงาน'],
             ['responses', ListChecks, 'ข้อมูลรายแถว'],
           ].map(([id, Icon, label]) => (
-            <button 
-              key={id} 
+            <button
+              key={id}
               onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-200 ${
-                activeTab === id 
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 translate-y-[-1px]' 
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === id
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 translate-y-[-1px]'
                   : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
-              }`}
+                }`}
             >
               <Icon size={18} />
               {label}
             </button>
           ))}
           <div className="flex-grow"></div>
-          <button 
-            className="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-sky-600 hover:bg-sky-50 transition-colors whitespace-nowrap" 
+          <button
+            className="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-sky-600 hover:bg-sky-50 transition-colors whitespace-nowrap"
             onClick={loadData}
           >
             <RefreshCw size={16} /> รีเฟรช
           </button>
-          <a 
-            className="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-emerald-600 hover:bg-emerald-50 transition-colors whitespace-nowrap" 
+          <a
+            className="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-emerald-600 hover:bg-emerald-50 transition-colors whitespace-nowrap"
             href={CSV_URL}
             target="_blank" rel="noreferrer"
           >
@@ -559,10 +597,34 @@ function App() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <MetricCard icon={Users} title="ผู้ตอบแบบสอบถามทั้งหมด" value={summary.total.toLocaleString('th-TH')} sub={`Pre-test ${summary.pre} + Post ${summary.post}`} color="#3b82f6" />
               <MetricCard icon={ClipboardList} title="ทำแบบทดสอบ Pre-test" value={summary.pre.toLocaleString('th-TH')} sub={summary.total ? `${((summary.pre / summary.total) * 100).toFixed(1)}% ของคำตอบทั้งหมด` : '-'} color="#0ea5e9" />
-              <MetricCard icon={Brain} title="คะแนนความรู้เฉลี่ย" value={`${summary.knowledgeAvg.toFixed(2)}/10`} sub="คะแนนจาก 10 ข้อ" color="#10b981" />
-              <MetricCard icon={ClipboardList} title="คะแนนพฤติกรรมเฉลี่ย" value={`${summary.behaviorAvg.toFixed(2)}/5`} sub="คะแนนเต็ม 5" color="#f59e0b" />
-              <MetricCard icon={Siren} title="พบอาการ MSDs ใน 7 วัน" value={`${summary.currentMsdsPct.toFixed(1)}%`} sub="ผู้มีอาการปวด/ชา/เมื่อยล้า" color="#ef4444" />
-              <MetricCard icon={BarChart3} title="ตำแหน่งที่ปวดมากที่สุด" value={summary.highestBody.key} sub={`${summary.highestBody.pct.toFixed(1)}% จากกลุ่ม Pre-test`} color="#8b5cf6" />
+              <MetricCard
+                icon={Brain}
+                title="คะแนนความรู้เฉลี่ย"
+                value={`${bodyData.knowledgeAvg.toFixed(2)}/10`}
+                sub={bodyData.knowledgeLevel ? `ระดับ: ${bodyData.knowledgeLevel}` : "จากคะแนนเต็ม 10"}
+                color="#3b82f6"
+              />
+              <MetricCard
+                icon={ListChecks}
+                title="พฤติกรรมเฉลี่ย"
+                value={`${bodyData.behaviorAvg.toFixed(2)}/5`}
+                sub={bodyData.behaviorLevel ? `ระดับ: ${bodyData.behaviorLevel}` : "จากคะแนนเต็ม 5"}
+                color="#10b981"
+              />
+              <MetricCard
+                icon={Siren}
+                title="พบอาการ MSDs ใน 7 วัน"
+                value={`${summary.currentMsdsPct.toFixed(1)}%`}
+                sub="ผู้มีอาการปวด/ชา/เมื่อยล้า"
+                color="#ef4444"
+              />
+              <MetricCard
+                icon={BarChart3}
+                title="ตำแหน่งที่ปวดมากที่สุด"
+                value={bodyData.parts[0]?.key || '-'}
+                sub={`${(bodyData.parts[0]?.pct || 0).toFixed(1)}% จากกลุ่ม Pre-test`}
+                color="#8b5cf6"
+              />
             </div>
 
             <div className="flex items-start gap-4 p-5 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-100 shadow-sm">
@@ -583,17 +645,17 @@ function App() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
               <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
-                <span className="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.6)]"></span> 
+                <span className="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.6)]"></span>
                 ความชุกอาการ MSDs ตามตำแหน่งร่างกาย (%)
               </h2>
-              <BarList data={summary.bodyParts} maxValue={maxBody} />
+              <BarList data={bodyData.parts} maxValue={maxBody} />
             </section>
             <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
               <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
-                <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span> 
+                <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span>
                 Body Map — แผนที่อาการ MSDs จำแนกตำแหน่งร่างกาย (n={summary.pre})
               </h2>
-              <BodyMap parts={summary.bodyParts} />
+              <BodyMap parts={bodyData.parts} />
             </section>
           </div>
         )}
@@ -601,7 +663,7 @@ function App() {
         {activeTab === 'overview' && (
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
             <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
-              <span className="w-3 h-3 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.6)]"></span> 
+              <span className="w-3 h-3 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.6)]"></span>
               ชั่วโมงใช้งานคอมพิวเตอร์ต่อวัน
             </h2>
             <BarList data={summary.workHours} maxValue={Math.max(...summary.workHours.map((item) => item.value), 1)} unit=" คน" compact />
@@ -612,14 +674,14 @@ function App() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
               <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
-                <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></span> 
+                <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></span>
                 ความรู้รายข้อ (% ตอบถูก)
               </h2>
               <BarList data={summary.knowledgeItems} maxValue={100} />
             </section>
             <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
               <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
-                <span className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]"></span> 
+                <span className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]"></span>
                 พฤติกรรมรายข้อ (คะแนนเฉลี่ย)
               </h2>
               <BarList data={summary.behaviorItems} maxValue={5} unit="คะแนน" />
@@ -630,17 +692,17 @@ function App() {
         {activeTab === 'departments' && (
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
             <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
-              <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
+              <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span>
               จำนวนผู้ตอบตามหน่วยงาน
             </h2>
-            <BarList data={summary.departments} maxValue={maxDept} unit=" คน" />
+            <BarList data={departments} maxValue={maxDept} unit=" คน" />
           </section>
         )}
 
         {activeTab === 'overview' && (
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
             <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
-              <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span> 
+              <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span>
               ข้อมูลรายแถวล่าสุดจาก Google Sheet
             </h2>
             <ResponseTable rows={rows} limit={12} onRowClick={setSelectedRow} />
@@ -651,7 +713,7 @@ function App() {
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-100">
               <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800">
-                <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
+                <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span>
                 ข้อมูลรายแถวทั้งหมด ({rows.length.toLocaleString('th-TH')} รายการ)
               </h2>
             </div>
