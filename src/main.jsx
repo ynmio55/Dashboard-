@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   AlertTriangle,
+  ArrowLeftRight,
   BarChart3,
   Brain,
   Building2,
@@ -379,7 +380,190 @@ function BodyMap({ parts }) {
   );
 }
 
+function DualBodyMap({ maleParts, femaleParts, maleCount, femaleCount }) {
+  const [selectedKey, setSelectedKey] = useState(null);
+  const maleByKey = Object.fromEntries(maleParts.map((part) => [part.key, part]));
+  const femaleByKey = Object.fromEntries(femaleParts.map((part) => [part.key, part]));
 
+  const colorFor = (partByKey, key) => {
+    const part = partByKey[key];
+    if (!part) return '#f1f5f9';
+    return getSeverityColor(part.pct);
+  };
+
+  const selectedMale = selectedKey ? maleByKey[selectedKey] : null;
+  const selectedFemale = selectedKey ? femaleByKey[selectedKey] : null;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-[1fr_350px] gap-6">
+      
+      <div className="relative flex flex-col items-center justify-center bg-slate-50/30 p-8 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'radial-gradient(#94a3b8 2px, transparent 2px)', backgroundSize: '24px 24px' }}></div>
+        
+        <div className="relative z-10 mb-8 bg-white/90 backdrop-blur-md px-6 py-2.5 rounded-full border border-slate-200/50 shadow-sm flex items-center gap-2.5 text-sm font-medium text-slate-600">
+          <span>💡</span> คลิกตำแหน่งบนแผนที่ร่างกายเพื่อเปรียบเทียบเพศ ชาย - หญิง
+        </div>
+
+        <div className="relative z-10 flex justify-around w-full gap-4">
+          {/* Male Model */}
+          <div className="flex flex-col items-center flex-1">
+            <span className="text-sm font-bold text-blue-600 mb-3 bg-blue-50 px-3 py-1 rounded-full border border-blue-100/50 flex items-center gap-1">
+              ชาย ♂ <span className="text-xs text-blue-500 font-medium">(n={maleCount})</span>
+            </span>
+            <svg viewBox="0 0 100 220" className="w-full max-w-[130px] drop-shadow-[0_10px_20px_rgba(59,130,246,0.08)] transition-transform hover:scale-[1.02] duration-500" role="img" aria-label="Male body map">
+              <g fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1.5">
+                <ellipse cx="50" cy="20" rx="14" ry="18" />
+                <rect x="44" y="38" width="12" height="15" />
+                <rect x="32" y="52" width="36" height="58" />
+                <rect x="14" y="52" width="14" height="35" rx="7" />
+                <rect x="72" y="52" width="14" height="35" rx="7" />
+                <rect x="14" y="92" width="14" height="35" rx="7" />
+                <rect x="72" y="92" width="14" height="35" rx="7" />
+                <rect x="34" y="115" width="14" height="40" rx="5" />
+                <rect x="52" y="115" width="14" height="40" rx="5" />
+                <rect x="34" y="160" width="14" height="40" rx="5" />
+                <rect x="52" y="160" width="14" height="40" rx="5" />
+              </g>
+              {BODY_SHAPES.map((shape, i) => (
+                <ellipse
+                  key={i}
+                  cx={shape.cx}
+                  cy={shape.cy}
+                  rx={shape.rx}
+                  ry={shape.ry}
+                  fill={colorFor(maleByKey, shape.key)}
+                  stroke="white"
+                  strokeWidth="1.5"
+                  className={`transition-all duration-300 hover:opacity-80 cursor-pointer ${selectedKey === shape.key ? 'stroke-blue-600 stroke-[3px]' : ''}`}
+                  onClick={() => setSelectedKey(shape.key)}
+                />
+              ))}
+            </svg>
+          </div>
+
+          {/* Female Model */}
+          <div className="flex flex-col items-center flex-1">
+            <span className="text-sm font-bold text-pink-600 mb-3 bg-pink-50 px-3 py-1 rounded-full border border-pink-100/50 flex items-center gap-1">
+              หญิง ♀ <span className="text-xs text-pink-500 font-medium">(n={femaleCount})</span>
+            </span>
+            <svg viewBox="0 0 100 220" className="w-full max-w-[130px] drop-shadow-[0_10px_20px_rgba(236,72,153,0.08)] transition-transform hover:scale-[1.02] duration-500" role="img" aria-label="Female body map">
+              <g fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1.5">
+                <ellipse cx="50" cy="20" rx="14" ry="18" />
+                <rect x="44" y="38" width="12" height="15" />
+                <rect x="32" y="52" width="36" height="58" />
+                <rect x="14" y="52" width="14" height="35" rx="7" />
+                <rect x="72" y="52" width="14" height="35" rx="7" />
+                <rect x="14" y="92" width="14" height="35" rx="7" />
+                <rect x="72" y="92" width="14" height="35" rx="7" />
+                <rect x="34" y="115" width="14" height="40" rx="5" />
+                <rect x="52" y="115" width="14" height="40" rx="5" />
+                <rect x="34" y="160" width="14" height="40" rx="5" />
+                <rect x="52" y="160" width="14" height="40" rx="5" />
+              </g>
+              {BODY_SHAPES.map((shape, i) => (
+                <ellipse
+                  key={i}
+                  cx={shape.cx}
+                  cy={shape.cy}
+                  rx={shape.rx}
+                  ry={shape.ry}
+                  fill={colorFor(femaleByKey, shape.key)}
+                  stroke="white"
+                  strokeWidth="1.5"
+                  className={`transition-all duration-300 hover:opacity-80 cursor-pointer ${selectedKey === shape.key ? 'stroke-pink-600 stroke-[3px]' : ''}`}
+                  onClick={() => setSelectedKey(shape.key)}
+                />
+              ))}
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Compare Detail Panel */}
+      <div className="flex flex-col gap-6">
+        <div className="flex-1 bg-slate-50/50 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-center p-6 transition-all duration-500">
+          {!selectedKey ? (
+            <div className="text-center py-8">
+              <div className="text-5xl mb-4 animate-[bounce_2s_infinite]">👉</div>
+              <p className="text-slate-500 font-medium leading-relaxed text-sm">
+                คลิกตำแหน่งบนแผนที่ร่างกาย<br/>เพื่อเปรียบเทียบอาการ ชาย / หญิง
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="text-center pb-4 border-b border-slate-200/50">
+                <strong className="text-2xl font-bold text-slate-800">{selectedKey}</strong>
+                <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mt-1">เปรียบเทียบอัตราการเกิดอาการปวด</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/30 text-center">
+                  <span className="text-xs font-bold text-blue-500 block mb-1">ชาย ♂</span>
+                  <b className="text-3xl font-black text-blue-600">{(selectedMale?.pct ?? 0).toFixed(1)}%</b>
+                  <p className="text-[10px] text-blue-700 mt-2 font-medium">
+                    {selectedMale?.hit ?? 0} จาก {maleCount} ราย
+                  </p>
+                </div>
+                <div className="bg-pink-50/50 p-4 rounded-2xl border border-pink-100/30 text-center">
+                  <span className="text-xs font-bold text-pink-500 block mb-1">หญิง ♀</span>
+                  <b className="text-3xl font-black text-pink-600">{(selectedFemale?.pct ?? 0).toFixed(1)}%</b>
+                  <p className="text-[10px] text-pink-700 mt-2 font-medium">
+                    {selectedFemale?.hit ?? 0} จาก {femaleCount} ราย
+                  </p>
+                </div>
+              </div>
+
+              {/* Comparison Insight card */}
+              {(() => {
+                const diff = (selectedFemale?.pct ?? 0) - (selectedMale?.pct ?? 0);
+                const absDiff = Math.abs(diff).toFixed(1);
+                const higherGender = diff > 0 ? 'หญิง ♀' : 'ชาย ♂';
+                const colorClass = diff > 0 ? 'text-pink-600 bg-pink-50/30 border-pink-100' : 'text-blue-600 bg-blue-50/30 border-blue-100';
+                if (parseFloat(absDiff) === 0) {
+                  return (
+                    <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50 text-center text-xs font-semibold text-slate-600">
+                      ทั้งสองเพศมีอัตราส่วนการปวดเท่ากัน
+                    </div>
+                  );
+                }
+                return (
+                  <div className={`p-4 rounded-2xl border ${colorClass} text-center text-xs font-bold`}>
+                    เพศ{higherGender} มีอัตราปวดสูงกว่าเพศ{diff > 0 ? 'ชาย ♂' : 'หญิง ♀'} อยู่ <span className="text-base font-black">{absDiff}%</span>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+
+        {/* Mini Legend */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+          <h3 className="flex items-center gap-2 font-bold text-slate-800 text-xs mb-4">
+            🎨 ระดับความชุก MSDs
+          </h3>
+          <div className="grid grid-cols-2 gap-3 text-[10px]">
+            <div className="flex items-center gap-2 text-slate-600">
+              <div className="w-3 h-3 rounded-full bg-[#be123c] shrink-0"></div>
+              <span><b>≥ 85%</b> สูงมาก</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-600">
+              <div className="w-3 h-3 rounded-full bg-[#ef4444] shrink-0"></div>
+              <span><b>75-84%</b> สูง</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-600">
+              <div className="w-3 h-3 rounded-full bg-[#f59e0b] shrink-0"></div>
+              <span><b>50-74%</b> ปานกลาง</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-600">
+              <div className="w-3 h-3 rounded-full bg-[#d97706] shrink-0"></div>
+              <span><b>&lt; 50%</b> ต่ำ</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function RowDetailModal({ row, onClose }) {
   if (!row) return null;
@@ -485,6 +669,7 @@ function App() {
   const [status, setStatus] = useState('กำลังโหลดข้อมูลจาก Google Sheets...');
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedRow, setSelectedRow] = useState(null);
+  const [selectedGender, setSelectedGender] = useState('all');
 
   async function loadData() {
     setStatus('กำลังโหลดข้อมูลจาก Google Sheets...');
@@ -502,9 +687,24 @@ function App() {
     loadData();
   }, []);
 
-  const summary = useMemo(() => analyze(rows), [rows]);
+  const maleRows = useMemo(() => rows.filter((row) => row['เพศ'] === 'ชาย'), [rows]);
+  const femaleRows = useMemo(() => rows.filter((row) => row['เพศ'] === 'หญิง'), [rows]);
+
+  const maleSummary = useMemo(() => analyze(maleRows), [maleRows]);
+  const femaleSummary = useMemo(() => analyze(femaleRows), [femaleRows]);
+
+  const filteredRows = useMemo(() => {
+    if (selectedGender === 'ชาย') return maleRows;
+    if (selectedGender === 'หญิง') return femaleRows;
+    return rows;
+  }, [rows, selectedGender, maleRows, femaleRows]);
+
+  const summary = useMemo(() => analyze(filteredRows), [filteredRows]);
   const maxBody = Math.max(...summary.bodyParts.map((item) => item.pct), 1);
   const maxDept = Math.max(...summary.departments.map((item) => item.value), 1);
+
+  const maxMaleBody = Math.max(...maleSummary.bodyParts.map((item) => item.pct), 1);
+  const maxFemaleBody = Math.max(...femaleSummary.bodyParts.map((item) => item.pct), 1);
 
   return (
     <main className="min-h-screen bg-slate-50 pb-20 font-sans">
@@ -524,9 +724,20 @@ function App() {
             <p className="text-sky-200 font-medium text-lg">กลุ่มงานอาชีวเวชกรรม โรงพยาบาลสกลนคร | ปีงบประมาณ 2569</p>
           </div>
           <div className="flex flex-col items-start md:items-end gap-3 mt-4 md:mt-0">
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-sm font-semibold text-sm text-sky-50">
-              <ClipboardList size={16} /> ระยะ: Pre-test / Post-test
-            </span>
+            <div className="flex gap-2 flex-wrap justify-start md:justify-end">
+              <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-sm font-semibold text-sm text-sky-50">
+                <ClipboardList size={16} /> ระยะ: Pre-test / Post-test
+              </span>
+              {selectedGender !== 'all' && (
+                <span className={`inline-flex items-center gap-1.5 px-4 py-2 backdrop-blur-md rounded-full border shadow-sm font-bold text-sm ${
+                  selectedGender === 'ชาย' 
+                    ? 'bg-blue-600/30 border-blue-500/30 text-blue-200' 
+                    : 'bg-pink-600/30 border-pink-500/30 text-pink-200'
+                }`}>
+                  เพศ: {selectedGender === 'ชาย' ? 'ชาย ♂' : 'หญิง ♀'}
+                </span>
+              )}
+            </div>
             <small className="text-sky-200/80 font-medium text-xs bg-black/20 px-3 py-1 rounded-full">{status}</small>
           </div>
         </div>
@@ -537,6 +748,7 @@ function App() {
           {[
             ['overview', Home, 'ภาพรวม'],
             ['msds', Siren, 'MSDs อาการปวด'],
+            ['gender-compare', ArrowLeftRight, 'เปรียบเทียบชาย-หญิง'],
             ['knowledge', Brain, 'ความรู้ & พฤติกรรม'],
             ['departments', Building2, 'รายหน่วยงาน'],
             ['responses', ListChecks, 'ข้อมูลรายแถว'],
@@ -555,6 +767,40 @@ function App() {
             </button>
           ))}
           <div className="flex-grow"></div>
+          {activeTab !== 'gender-compare' && (
+            <div className="flex items-center bg-slate-100 p-1 rounded-full border border-slate-200/50 mr-2 shrink-0">
+              <button 
+                onClick={() => setSelectedGender('all')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  selectedGender === 'all' 
+                    ? 'bg-white text-slate-800 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                ทั้งหมด
+              </button>
+              <button 
+                onClick={() => setSelectedGender('ชาย')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  selectedGender === 'ชาย' 
+                    ? 'bg-blue-600 text-white shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                ชาย ♂
+              </button>
+              <button 
+                onClick={() => setSelectedGender('หญิง')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  selectedGender === 'หญิง' 
+                    ? 'bg-pink-600 text-white shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                หญิง ♀
+              </button>
+            </div>
+          )}
           <button 
             className="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-sky-600 hover:bg-sky-50 transition-colors whitespace-nowrap" 
             onClick={loadData}
@@ -657,6 +903,213 @@ function App() {
             </h2>
             <BarList data={summary.departments} maxValue={maxDept} unit=" คน" />
           </section>
+        )}
+
+        {activeTab === 'gender-compare' && (
+          <>
+            {/* Comparison Key Metrics Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in zoom-in duration-300">
+              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+                  <Users size={60} />
+                </div>
+                <span className="text-xs font-semibold text-slate-400 block mb-2">จำนวนผู้ตอบแบบสอบถาม</span>
+                <div className="flex justify-between items-baseline">
+                  <div>
+                    <span className="text-xs font-medium text-blue-500 mr-1">ชาย:</span>
+                    <b className="text-2xl font-bold text-slate-800">{maleSummary.total} ราย</b>
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium text-pink-500 mr-1">หญิง:</span>
+                    <b className="text-2xl font-bold text-slate-800">{femaleSummary.total} ราย</b>
+                  </div>
+                </div>
+                <div className="mt-4 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                  <div style={{ width: `${(maleSummary.total / (rows.length || 1)) * 100}%` }} className="bg-blue-500 h-full"></div>
+                  <div style={{ width: `${(femaleSummary.total / (rows.length || 1)) * 100}%` }} className="bg-pink-500 h-full"></div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+                  <Brain size={60} />
+                </div>
+                <span className="text-xs font-semibold text-slate-400 block mb-2">คะแนนความรู้เฉลี่ย (เต็ม 10)</span>
+                <div className="flex justify-between items-baseline mt-1">
+                  <div>
+                    <span className="text-xs font-medium text-blue-500 mr-1">ชาย:</span>
+                    <b className="text-3xl font-black text-blue-600">{maleSummary.knowledgeAvg.toFixed(2)}</b>
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium text-pink-500 mr-1">หญิง:</span>
+                    <b className="text-3xl font-black text-pink-600">{femaleSummary.knowledgeAvg.toFixed(2)}</b>
+                  </div>
+                </div>
+                <span className="text-[10px] text-slate-400 mt-2 block font-medium">
+                  {maleSummary.knowledgeAvg > femaleSummary.knowledgeAvg 
+                    ? `เพศชายมีความรู้เฉลี่ยมากกว่า ${(maleSummary.knowledgeAvg - femaleSummary.knowledgeAvg).toFixed(2)} คะแนน`
+                    : `เพศหญิงมีความรู้เฉลี่ยมากกว่า ${(femaleSummary.knowledgeAvg - maleSummary.knowledgeAvg).toFixed(2)} คะแนน`}
+                </span>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+                  <ClipboardList size={60} />
+                </div>
+                <span className="text-xs font-semibold text-slate-400 block mb-2">คะแนนพฤติกรรมเฉลี่ย (เต็ม 5)</span>
+                <div className="flex justify-between items-baseline mt-1">
+                  <div>
+                    <span className="text-xs font-medium text-blue-500 mr-1">ชาย:</span>
+                    <b className="text-3xl font-black text-blue-600">{maleSummary.behaviorAvg.toFixed(2)}</b>
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium text-pink-500 mr-1">หญิง:</span>
+                    <b className="text-3xl font-black text-pink-600">{femaleSummary.behaviorAvg.toFixed(2)}</b>
+                  </div>
+                </div>
+                <span className="text-[10px] text-slate-400 mt-2 block font-medium">
+                  {maleSummary.behaviorAvg > femaleSummary.behaviorAvg 
+                    ? `เพศชายพฤติกรรมดีกว่า ${(maleSummary.behaviorAvg - femaleSummary.behaviorAvg).toFixed(2)} คะแนน`
+                    : `เพศหญิงพฤติกรรมดีกว่า ${(femaleSummary.behaviorAvg - maleSummary.behaviorAvg).toFixed(2)} คะแนน`}
+                </span>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+                  <Siren size={60} />
+                </div>
+                <span className="text-xs font-semibold text-slate-400 block mb-2">พบอาการ MSDs ใน 7 วัน (%)</span>
+                <div className="flex justify-between items-baseline mt-1">
+                  <div>
+                    <span className="text-xs font-medium text-blue-500 mr-1">ชาย:</span>
+                    <b className="text-3xl font-black text-blue-600">{maleSummary.currentMsdsPct.toFixed(1)}%</b>
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium text-pink-500 mr-1">หญิง:</span>
+                    <b className="text-3xl font-black text-pink-600">{femaleSummary.currentMsdsPct.toFixed(1)}%</b>
+                  </div>
+                </div>
+                <span className="text-[10px] text-slate-400 mt-2 block font-medium">
+                  {Math.abs(maleSummary.currentMsdsPct - femaleSummary.currentMsdsPct).toFixed(1)}% คือผลต่างสัดส่วนอาการปวด
+                </span>
+              </div>
+            </div>
+
+            {/* Dual Body Map */}
+            <div className="grid grid-cols-1 gap-8 animate-in fade-in duration-300">
+              <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+                <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+                  <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
+                  แผนที่ร่างกายคู่จำแนกเพศ — เปรียบเทียบความชุกอาการปวด MSDs (n ชาย={maleSummary.pre}, หญิง={femaleSummary.pre})
+                </h2>
+                <DualBodyMap 
+                  maleParts={maleSummary.bodyParts} 
+                  femaleParts={femaleSummary.bodyParts} 
+                  maleCount={maleSummary.pre}
+                  femaleCount={femaleSummary.pre}
+                />
+              </section>
+            </div>
+
+            {/* Side-by-Side MSDs Bar Chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-300">
+              <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+                <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+                  <span className="w-3.5 h-3.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] flex items-center justify-center text-[10px] text-white font-bold">♂</span> 
+                  ความชุกอาการ MSDs เพศชาย (%)
+                </h2>
+                <BarList 
+                  data={maleSummary.bodyParts} 
+                  maxValue={maxMaleBody} 
+                  colorMapper={(item) => getSeverityColor(item.pct ?? item.value ?? item.score)}
+                />
+              </section>
+              <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+                <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+                  <span className="w-3.5 h-3.5 rounded-full bg-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.5)] flex items-center justify-center text-[10px] text-white font-bold">♀</span> 
+                  ความชุกอาการ MSDs เพศหญิง (%)
+                </h2>
+                <BarList 
+                  data={femaleSummary.bodyParts} 
+                  maxValue={maxFemaleBody} 
+                  colorMapper={(item) => getSeverityColor(item.pct ?? item.value ?? item.score)}
+                />
+              </section>
+            </div>
+
+            {/* Side-by-Side Knowledge and Behavior Comparison */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-300">
+              <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+                <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100">
+                  <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></span> 
+                  ความรู้รายข้อเปรียบเทียบชาย-หญิง (% ตอบถูก)
+                </h2>
+                <div className="space-y-4">
+                  {maleSummary.knowledgeItems.map((maleItem, idx) => {
+                    const femaleItem = femaleSummary.knowledgeItems[idx];
+                    return (
+                      <div key={maleItem.key} className="p-4 rounded-2xl bg-slate-50/50 border border-slate-100">
+                        <div className="text-xs font-semibold text-slate-600 mb-2 truncate" title={maleItem.label}>
+                          {maleItem.key}. {maleItem.label}
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-[10px] font-bold text-blue-500 shrink-0">ชาย ♂</span>
+                            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden flex-grow shadow-inner">
+                              <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: `${maleItem.score}%` }}></div>
+                            </div>
+                            <span className="text-xs font-bold text-slate-700 w-10 text-right">{Math.round(maleItem.score)}%</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-[10px] font-bold text-pink-500 shrink-0">หญิง ♀</span>
+                            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden flex-grow shadow-inner">
+                              <div className="bg-pink-500 h-full rounded-full transition-all duration-1000" style={{ width: `${femaleItem.score}%` }}></div>
+                            </div>
+                            <span className="text-xs font-bold text-slate-700 w-10 text-right">{Math.round(femaleItem.score)}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+                <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100">
+                  <span className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]"></span> 
+                  พฤติกรรมรายข้อเปรียบเทียบชาย-หญิง (คะแนนเฉลี่ย 1-5)
+                </h2>
+                <div className="space-y-4">
+                  {maleSummary.behaviorItems.map((maleItem, idx) => {
+                    const femaleItem = femaleSummary.behaviorItems[idx];
+                    return (
+                      <div key={maleItem.key} className="p-4 rounded-2xl bg-slate-50/50 border border-slate-100">
+                        <div className="text-xs font-semibold text-slate-600 mb-2 truncate" title={maleItem.label}>
+                          {maleItem.key}. {maleItem.label}
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-[10px] font-bold text-blue-500 shrink-0">ชาย ♂</span>
+                            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden flex-grow shadow-inner">
+                              <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: `${(maleItem.score / 5) * 100}%` }}></div>
+                            </div>
+                            <span className="text-xs font-bold text-slate-700 w-10 text-right">{maleItem.score.toFixed(2)}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-[10px] font-bold text-pink-500 shrink-0">หญิง ♀</span>
+                            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden flex-grow shadow-inner">
+                              <div className="bg-pink-500 h-full rounded-full transition-all duration-1000" style={{ width: `${(femaleItem.score / 5) * 100}%` }}></div>
+                            </div>
+                            <span className="text-xs font-bold text-slate-700 w-10 text-right">{femaleItem.score.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+          </>
         )}
 
         {activeTab === 'overview' && (
