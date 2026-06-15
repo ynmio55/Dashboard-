@@ -195,7 +195,14 @@ function MetricCard({ icon: Icon, title, value, sub, color }) {
   );
 }
 
-function BarList({ data, maxValue, unit = '%', compact = false }) {
+function getSeverityColor(pct) {
+  if (pct >= 85) return '#be123c'; // dark red
+  if (pct >= 75) return '#ef4444'; // red
+  if (pct >= 50) return '#f59e0b'; // amber/orange
+  return '#d97706'; // light brown
+}
+
+function BarList({ data, maxValue, unit = '%', compact = false, colorMapper }) {
   const tones = [
     'from-rose-500 to-rose-400', 'from-orange-500 to-orange-400', 
     'from-amber-500 to-amber-400', 'from-yellow-500 to-yellow-400',
@@ -210,13 +217,27 @@ function BarList({ data, maxValue, unit = '%', compact = false }) {
         const value = item.pct ?? item.value ?? item.score;
         const width = maxValue ? (value / maxValue) * 100 : 0;
         const gradient = tones[index % tones.length];
+        
+        let barClass = `h-full rounded-full transition-all duration-1000 ease-out`;
+        let barStyle = {};
+        if (colorMapper) {
+          const color = colorMapper(item);
+          if (color.startsWith('bg-') || color.startsWith('from-')) {
+            barClass += ` ${color}`;
+          } else {
+            barStyle.backgroundColor = color;
+          }
+        } else {
+          barClass += ` bg-gradient-to-r ${gradient}`;
+        }
+
         return (
           <div className="grid grid-cols-[minmax(120px,200px)_1fr_70px] gap-4 items-center group" key={item.label || item.key}>
             <span className="text-sm font-medium text-slate-600 truncate group-hover:text-slate-900 transition-colors">{item.label || item.key}</span>
             <div className="h-4 bg-slate-100 rounded-full overflow-hidden shadow-inner">
               <div 
-                className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-1000 ease-out`} 
-                style={{ width: `${Math.max(width, 2)}%` }} 
+                className={barClass} 
+                style={{ width: `${Math.max(width, 2)}%`, ...barStyle }} 
               />
             </div>
             <b className="text-sm font-semibold text-slate-700 text-right">
@@ -253,10 +274,7 @@ function BodyMap({ parts }) {
   const byKey = Object.fromEntries(parts.map((part) => [part.key, part]));
   const colorFor = (part) => {
     if (!part) return '#f1f5f9';
-    if (part.pct >= 85) return '#be123c'; // dark red
-    if (part.pct >= 75) return '#ef4444'; // red
-    if (part.pct >= 50) return '#f59e0b'; // amber/orange
-    return '#d97706'; // light brown
+    return getSeverityColor(part.pct);
   };
 
   return (
@@ -586,7 +604,11 @@ function App() {
                 <span className="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.6)]"></span> 
                 ความชุกอาการ MSDs ตามตำแหน่งร่างกาย (%)
               </h2>
-              <BarList data={summary.bodyParts} maxValue={maxBody} />
+              <BarList 
+                data={summary.bodyParts} 
+                maxValue={maxBody} 
+                colorMapper={(item) => getSeverityColor(item.pct ?? item.value ?? item.score)}
+              />
             </section>
             <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
               <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
