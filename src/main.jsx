@@ -22,6 +22,8 @@ const CSV_URL =
   'https://docs.google.com/spreadsheets/d/1YsO7jR_0Z_xBef-03ACPYlIJ8Pb47FtdNds0ObrRhoE/gviz/tq?tqx=out:csv&gid=1870394303';
 const DEPT_CSV_URL = 
   'https://docs.google.com/spreadsheets/d/1YsO7jR_0Z_xBef-03ACPYlIJ8Pb47FtdNds0ObrRhoE/gviz/tq?tqx=out:csv&gid=128247472';
+const ANALYSIS_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/1YsO7jR_0Z_xBef-03ACPYlIJ8Pb47FtdNds0ObrRhoE/gviz/tq?tqx=out:csv&gid=182615786';
 
 const BODY_PARTS = [
   { key: 'ไหล่', column: '2.ไหล่ รวม', x: 48, y: 24, w: 26, h: 12, rx: 8 },
@@ -85,6 +87,97 @@ function toNumber(value) {
   const clean = String(value).replace('%', '').trim();
   const numeric = Number(clean);
   return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function parseAnalysisSheet(csvText) {
+  const rawRows = parseCsv(csvText);
+  const rows = rawRows.filter(r => r.some(c => c.trim() !== ''));
+  if (rows.length < 12) return null;
+
+  const bodyParts = [];
+  const bodyPartRows = rows.slice(2, 12);
+  bodyPartRows.forEach((row) => {
+    const rawName = row[0] || '';
+    const name = rawName.replace(/^\d+\./, '').trim();
+    
+    const severityCounts = row.slice(1, 6).map(Number);
+    const frequencyCounts = row.slice(8, 13).map(Number);
+    const levelCounts = row.slice(29, 34).map(Number);
+    
+    const severityPcts = row.slice(15, 20).map(val => toNumber(String(val).replace('%', '').trim()));
+    const frequencyPcts = row.slice(22, 27).map(val => toNumber(String(val).replace('%', '').trim()));
+    const levelPcts = row.slice(36, 41).map(val => toNumber(String(val).replace('%', '').trim()));
+    
+    bodyParts.push({
+      rawName,
+      name,
+      severityCounts,
+      frequencyCounts,
+      levelCounts,
+      severityPcts,
+      frequencyPcts,
+      levelPcts
+    });
+  });
+
+  const row1 = rows[1] || [];
+  const knowledgeAvg = {
+    label: row1[43] || 'Avg Knowledge',
+    pre: toNumber(row1[44]),
+    preLevel: row1[45] || '',
+    post: row1[46] ? toNumber(row1[46]) : null,
+    postLevel: row1[47] || ''
+  };
+
+  const row2 = rows[2] || [];
+  const behaviorAvg = {
+    label: row2[43] || 'Avg Behavior',
+    pre: toNumber(row2[44]),
+    preLevel: row2[45] || '',
+    post: row2[46] ? toNumber(row2[46]) : null,
+    postLevel: row2[47] || ''
+  };
+
+  let targetText = '';
+  rows.forEach((r) => {
+    r.forEach((cell) => {
+      if (cell && cell.includes('เป้าหมายโครงการ')) {
+        targetText = cell.trim();
+      }
+    });
+  });
+
+  const knowledgeLegend = [];
+  const behaviorLegend = [];
+  
+  rows.slice(2, 5).forEach((r) => {
+    if (r[49] && r[50] && r[51]) {
+      knowledgeLegend.push({
+        range: r[49].trim(),
+        pct: r[50].trim(),
+        level: r[51].trim()
+      });
+    }
+  });
+
+  rows.slice(8, 13).forEach((r) => {
+    if (r[49] && r[50] && r[51]) {
+      behaviorLegend.push({
+        range: r[49].trim(),
+        score: r[50].trim(),
+        level: r[51].trim()
+      });
+    }
+  });
+
+  return {
+    bodyParts,
+    knowledgeAvg,
+    behaviorAvg,
+    targetText,
+    knowledgeLegend,
+    behaviorLegend
+  };
 }
 
 function avg(values) {
@@ -661,6 +754,269 @@ function ResponseTable({ rows, limit, onRowClick }) {
   );
 }
 
+function SeverityDistributionBar({ label, pct, count, barColor }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs font-semibold text-slate-600">
+        <span>{label}</span>
+        <span>{pct.toFixed(1)}% ({count} คน)</span>
+      </div>
+      <div className="h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner relative">
+        <div 
+          className="h-full rounded-full transition-all duration-1000 ease-out"
+          style={{ width: `${Math.max(pct, 2)}%`, backgroundColor: barColor }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function AnalysisView({ analysisData }) {
+  const [selectedPartIndex, setSelectedPartIndex] = useState(0);
+  const selectedPart = analysisData.bodyParts[selectedPartIndex] || null;
+
+  const levelLabels = [
+    'ระดับ 0 (ไม่มีอาการ)',
+    'ระดับ 1 (เล็กน้อย)',
+    'ระดับ 2 (ปานกลาง)',
+    'ระดับ 3 (รุนแรง)',
+    'ระดับ 4 (รุนแรงมาก)'
+  ];
+
+  const levelColors = [
+    '#10b981', // green for level 0
+    '#f59e0b', // amber/yellow for level 1
+    '#f97316', // orange for level 2
+    '#ef4444', // red for level 3
+    '#be123c'  // dark red for level 4
+  ];
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-300">
+      
+      {/* KPIs & Target Card */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-600">
+              <Brain size={20} />
+            </div>
+            <span className="text-sm font-semibold text-slate-500">ความรู้เฉลี่ยโครงการ (Pre-test)</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <strong className="text-4xl font-extrabold text-slate-800">{analysisData.knowledgeAvg.pre.toFixed(2)}</strong>
+            <span className="text-xs font-semibold text-slate-400">/ 10 คะแนน</span>
+          </div>
+          <div className="mt-3">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+              ระดับ: {analysisData.knowledgeAvg.preLevel}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2.5 bg-amber-50 rounded-xl text-amber-600">
+              <ClipboardList size={20} />
+            </div>
+            <span className="text-sm font-semibold text-slate-500">พฤติกรรมเฉลี่ยโครงการ (Pre-test)</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <strong className="text-4xl font-extrabold text-slate-800">{analysisData.behaviorAvg.pre.toFixed(2)}</strong>
+            <span className="text-xs font-semibold text-slate-400">/ 5 คะแนน</span>
+          </div>
+          <div className="mt-3">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+              ระดับ: {analysisData.behaviorAvg.preLevel}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-indigo-900 to-slate-800 p-6 rounded-2xl text-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+            <MonitorCog size={100} />
+          </div>
+          <div className="relative z-10 space-y-3">
+            <div className="flex items-center gap-2 text-sky-300 text-xs font-bold tracking-wider uppercase">
+              🎯 เป้าหมายผลสัมฤทธิ์โครงการ
+            </div>
+            <p className="text-sm font-medium leading-relaxed text-indigo-100">
+              {analysisData.targetText || 'เป้าหมายโครงการ: พัฒนาพฤติกรรมความปลอดภัยการยศาสตร์'}
+            </p>
+            <div className="pt-1 flex items-center gap-2 text-xs font-semibold text-sky-200">
+              <span>เกณฑ์ความรู้ ดี (≥80%) และ พฤติกรรม ดี (≥3.41)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Detailed Distributions per Body Part */}
+      <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+        <div className="pb-4 border-b border-slate-100 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="flex items-center gap-2.5 text-lg font-bold text-slate-800">
+              <span className="w-3 h-3 rounded-full bg-indigo-600 shadow-[0_0_10px_rgba(79,70,229,0.5)]"></span>
+              การแจกแจงระดับสัดส่วนอาการปวด (n = 168 คน)
+            </h2>
+            <p className="text-xs text-slate-400 font-medium mt-1">วิเคราะห์เจาะลึก 3 มิติ: ระดับความรุนแรง ความถี่ และอาการโดยรวม</p>
+          </div>
+        </div>
+
+        {/* Body Parts Button Selector */}
+        <div className="flex flex-wrap gap-2.5 mb-8">
+          {analysisData.bodyParts.map((part, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSelectedPartIndex(idx)}
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
+                selectedPartIndex === idx
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20 translate-y-[-1px]'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-800 border border-slate-200/40'
+              }`}
+            >
+              {part.rawName}
+            </button>
+          ))}
+        </div>
+
+        {selectedPart && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-300">
+            {/* Severity Panel */}
+            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-5">
+              <div className="pb-3 border-b border-slate-200/50">
+                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider block mb-1">มิติที่ 1</span>
+                <strong className="text-base font-bold text-slate-800">ความรุนแรง (Severity)</strong>
+              </div>
+              <div className="space-y-4">
+                {levelLabels.map((label, idx) => (
+                  <SeverityDistributionBar
+                    key={idx}
+                    label={label}
+                    pct={selectedPart.severityPcts[idx]}
+                    count={selectedPart.severityCounts[idx]}
+                    barColor={levelColors[idx]}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Frequency Panel */}
+            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-5">
+              <div className="pb-3 border-b border-slate-200/50">
+                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider block mb-1">มิติที่ 2</span>
+                <strong className="text-base font-bold text-slate-800">ความถี่ (Frequency)</strong>
+              </div>
+              <div className="space-y-4">
+                {levelLabels.map((label, idx) => (
+                  <SeverityDistributionBar
+                    key={idx}
+                    label={label}
+                    pct={selectedPart.frequencyPcts[idx]}
+                    count={selectedPart.frequencyCounts[idx]}
+                    barColor={levelColors[idx]}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Overall Symptom Level Panel */}
+            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-5">
+              <div className="pb-3 border-b border-slate-200/50">
+                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider block mb-1">มิติที่ 3</span>
+                <strong className="text-base font-bold text-slate-800">ระดับอาการ (Symptom Level)</strong>
+              </div>
+              <div className="space-y-4">
+                {levelLabels.map((label, idx) => (
+                  <SeverityDistributionBar
+                    key={idx}
+                    label={label}
+                    pct={selectedPart.levelPcts[idx]}
+                    count={selectedPart.levelCounts[idx]}
+                    barColor={levelColors[idx]}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Grading Legends side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* Knowledge Legend Panel */}
+        <section className="bg-white p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+          <h3 className="font-bold text-slate-800 text-sm mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
+            <span>📚</span> เกณฑ์ระดับความรู้การยศาสตร์
+          </h3>
+          <div className="overflow-hidden border border-slate-200 rounded-xl bg-white">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600 uppercase font-semibold">
+                <tr>
+                  <th className="px-4 py-3">ช่วงคะแนน</th>
+                  <th className="px-4 py-3">ร้อยละ</th>
+                  <th className="px-4 py-3">ระดับความรู้</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
+                {analysisData.knowledgeLegend.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-slate-800">{item.range}</td>
+                    <td className="px-4 py-3">{item.pct}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                        item.level === 'ดี' ? 'bg-emerald-100 text-emerald-800' :
+                        item.level === 'ปานกลาง' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {item.level}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Behavior Legend Panel */}
+        <section className="bg-white p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+          <h3 className="font-bold text-slate-800 text-sm mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
+            <span>🧘‍♂️</span> เกณฑ์ระดับพฤติกรรมการทำงาน
+          </h3>
+          <div className="overflow-hidden border border-slate-200 rounded-xl bg-white">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600 uppercase font-semibold">
+                <tr>
+                  <th className="px-4 py-3">ค่าเฉลี่ยคะแนน</th>
+                  <th className="px-4 py-3">คะแนนรวม (เต็ม 50)</th>
+                  <th className="px-4 py-3">ระดับพฤติกรรม</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
+                {analysisData.behaviorLegend.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-slate-800">{item.range}</td>
+                    <td className="px-4 py-3">{item.score}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                        item.level.startsWith('ดี') ? 'bg-emerald-100 text-emerald-800' :
+                        item.level.startsWith('ปานกลาง') ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {item.level}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+    </div>
+  );
+}
+
 function App() {
   const [rows, setRows] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -669,15 +1025,19 @@ function App() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [selectedGender, setSelectedGender] = useState('all');
 
+  const [analysisData, setAnalysisData] = useState(null);
+
   async function loadData() {
     setStatus('กำลังโหลดข้อมูลจาก Google Sheets...');
     try {
-      const [mainRes, deptRes] = await Promise.all([
+      const [mainRes, deptRes, analysisRes] = await Promise.all([
         fetch(CSV_URL),
-        fetch(DEPT_CSV_URL)
+        fetch(DEPT_CSV_URL),
+        fetch(ANALYSIS_CSV_URL)
       ]);
       const mainText = await mainRes.text();
       const deptText = await deptRes.text();
+      const analysisText = await analysisRes.text();
       
       setRows(rowsFromCsv(mainText));
       
@@ -690,6 +1050,10 @@ function App() {
         .sort((a, b) => b.value - a.value);
         
       setDepartments(deptData);
+
+      const parsedAnalysis = parseAnalysisSheet(analysisText);
+      setAnalysisData(parsedAnalysis);
+
       setStatus(`อัปเดตล่าสุด: ${new Date().toLocaleString('th-TH')}`);
     } catch (error) {
       setStatus(`โหลดข้อมูลไม่สำเร็จ: ${error.message}`);
@@ -741,14 +1105,39 @@ function App() {
               <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-sm font-semibold text-sm text-sky-50">
                 <ClipboardList size={16} /> ระยะ: Pre-test / Post-test
               </span>
-              {selectedGender !== 'all' && (
-                <span className={`inline-flex items-center gap-1.5 px-4 py-2 backdrop-blur-md rounded-full border shadow-sm font-bold text-sm ${
-                  selectedGender === 'ชาย' 
-                    ? 'bg-blue-600/30 border-blue-500/30 text-blue-200' 
-                    : 'bg-pink-600/30 border-pink-500/30 text-pink-200'
-                }`}>
-                  เพศ: {selectedGender === 'ชาย' ? 'ชาย ♂' : 'หญิง ♀'}
-                </span>
+              {activeTab !== 'gender-compare' && activeTab !== 'analysis-tab' && (
+                <div className="flex items-center bg-white/10 backdrop-blur-md p-1 rounded-full border border-white/20 shadow-sm shrink-0">
+                  <button 
+                    onClick={() => setSelectedGender('all')}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                      selectedGender === 'all' 
+                        ? 'bg-white text-slate-800 shadow-sm font-extrabold' 
+                        : 'text-sky-100 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    ทั้งหมด
+                  </button>
+                  <button 
+                    onClick={() => setSelectedGender('ชาย')}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                      selectedGender === 'ชาย' 
+                        ? 'bg-blue-600 text-white shadow-md border border-white/20 font-extrabold' 
+                        : 'text-sky-100 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    ชาย ♂
+                  </button>
+                  <button 
+                    onClick={() => setSelectedGender('หญิง')}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                      selectedGender === 'หญิง' 
+                        ? 'bg-pink-600 text-white shadow-md border border-white/20 font-extrabold' 
+                        : 'text-sky-100 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    หญิง ♀
+                  </button>
+                </div>
               )}
             </div>
             <small className="text-sky-200/80 font-medium text-xs bg-black/20 px-3 py-1 rounded-full">{status}</small>
@@ -762,6 +1151,7 @@ function App() {
             ['overview', Home, 'ภาพรวม'],
             ['msds', Siren, 'MSDs อาการปวด'],
             ['gender-compare', ArrowLeftRight, 'เปรียบเทียบชาย-หญิง'],
+            ['analysis-tab', ClipboardList, 'วิเคราะห์ระดับอาการ (ROSA)'],
             ['knowledge', Brain, 'ความรู้ & พฤติกรรม'],
             ['departments', Building2, 'รายหน่วยงาน'],
             ['responses', ListChecks, 'ข้อมูลรายแถว'],
@@ -780,40 +1170,6 @@ function App() {
             </button>
           ))}
           <div className="flex-grow"></div>
-          {activeTab !== 'gender-compare' && (
-            <div className="flex items-center bg-slate-100 p-1 rounded-full border border-slate-200/50 mr-2 shrink-0">
-              <button 
-                onClick={() => setSelectedGender('all')}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
-                  selectedGender === 'all' 
-                    ? 'bg-white text-slate-800 shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                ทั้งหมด
-              </button>
-              <button 
-                onClick={() => setSelectedGender('ชาย')}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
-                  selectedGender === 'ชาย' 
-                    ? 'bg-blue-600 text-white shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                ชาย ♂
-              </button>
-              <button 
-                onClick={() => setSelectedGender('หญิง')}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
-                  selectedGender === 'หญิง' 
-                    ? 'bg-pink-600 text-white shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                หญิง ♀
-              </button>
-            </div>
-          )}
           <button 
             className="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-sky-600 hover:bg-sky-50 transition-colors whitespace-nowrap" 
             onClick={loadData}
@@ -916,6 +1272,10 @@ function App() {
             </h2>
             <BarList data={departments} maxValue={maxDept} unit=" คน" />
           </section>
+        )}
+
+        {activeTab === 'analysis-tab' && analysisData && (
+          <AnalysisView analysisData={analysisData} />
         )}
 
         {activeTab === 'gender-compare' && (
