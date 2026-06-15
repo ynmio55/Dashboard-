@@ -440,7 +440,7 @@ function BodyMap({ parts }) {
               <span className="block text-sm font-medium text-slate-500 uppercase tracking-wide mb-4 pb-4 border-b border-slate-200/50">ตำแหน่งที่พบสูงสุด</span>
               <b className="block text-5xl font-black text-rose-500 my-2 tracking-tighter">{selected.pct.toFixed(1)}%</b>
               <p className="text-sm text-slate-600 leading-relaxed mt-4">
-                <span className="font-semibold text-slate-800">{selected.hit}</span> จากกลุ่ม Pre-test <span className="font-semibold text-slate-800">{Math.round(selected.pct)}%</span> มีคะแนนอาการมากกว่า 0
+                <span className="font-semibold text-slate-800">{selected.hit}</span> จากกลุ่ม Pre-test <span className="font-semibold text-slate-800">{selected.pct.toFixed(1)}%</span> มีคะแนนอาการมากกว่า 0
               </p>
             </div>
           )}
