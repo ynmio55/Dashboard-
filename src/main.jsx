@@ -20,6 +20,8 @@ import './styles.css';
 
 const CSV_URL =
   'https://docs.google.com/spreadsheets/d/1YsO7jR_0Z_xBef-03ACPYlIJ8Pb47FtdNds0ObrRhoE/gviz/tq?tqx=out:csv&gid=1870394303';
+const DEPT_CSV_URL = 
+  'https://docs.google.com/spreadsheets/d/1YsO7jR_0Z_xBef-03ACPYlIJ8Pb47FtdNds0ObrRhoE/gviz/tq?tqx=out:csv&gid=128247472';
 
 const BODY_PARTS = [
   { key: 'ไหล่', column: '2.ไหล่ รวม', x: 48, y: 24, w: 26, h: 12, rx: 8 },
@@ -122,20 +124,16 @@ function analyze(rows) {
     const sourceHeader = rows[0]?.__headers?.[80 + i] || key;
     const score = avg(knowledgeRows.map((row) => row[key])) * 100;
     return { key, label: shortQuestion(sourceHeader), score };
-  });
+  }).sort((a, b) => b.score - a.score);
 
   const behaviorItems = Array.from({ length: 10 }, (_, i) => {
     const key = `Be${i + 1}`;
     const sourceHeader = rows[0]?.__headers?.[89 + i] || key;
     const score = avg(behaviorRows.map((row) => row[key]));
     return { key, label: shortQuestion(sourceHeader), score };
-  });
+  }).sort((a, b) => b.score - a.score);
 
-  const departments = Object.entries(countBy(rows, 'หน่วยงานที่สังกัด  '))
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 8);
-
+  // Departments are now fetched separately from the pivot table
   const workHours = Object.entries(countBy(rows, 'ระยะเวลาที่ใช้คอมพิวเตอร์โดยเฉลี่ยต่อวัน  '))
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
@@ -153,7 +151,6 @@ function analyze(rows) {
     knowledgeAvg,
     behaviorAvg,
     bodyParts,
-    departments,
     workHours,
     knowledgeItems,
     behaviorItems,
@@ -666,6 +663,7 @@ function ResponseTable({ rows, limit, onRowClick }) {
 
 function App() {
   const [rows, setRows] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [status, setStatus] = useState('กำลังโหลดข้อมูลจาก Google Sheets...');
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedRow, setSelectedRow] = useState(null);
@@ -674,9 +672,24 @@ function App() {
   async function loadData() {
     setStatus('กำลังโหลดข้อมูลจาก Google Sheets...');
     try {
-      const response = await fetch(CSV_URL);
-      const text = await response.text();
-      setRows(rowsFromCsv(text));
+      const [mainRes, deptRes] = await Promise.all([
+        fetch(CSV_URL),
+        fetch(DEPT_CSV_URL)
+      ]);
+      const mainText = await mainRes.text();
+      const deptText = await deptRes.text();
+      
+      setRows(rowsFromCsv(mainText));
+      
+      const deptData = rowsFromCsv(deptText)
+        .map(row => ({
+          label: row['หน่วยงานที่สังกัด  '] || row[Object.keys(row)[0]],
+          value: toNumber(row['COUNTA ของ ชื่อ-สกุล'] || row[Object.keys(row)[1]])
+        }))
+        .filter(item => item.label && item.label !== 'ผลรวม' && item.value > 0)
+        .sort((a, b) => b.value - a.value);
+        
+      setDepartments(deptData);
       setStatus(`อัปเดตล่าสุด: ${new Date().toLocaleString('th-TH')}`);
     } catch (error) {
       setStatus(`โหลดข้อมูลไม่สำเร็จ: ${error.message}`);
@@ -701,7 +714,7 @@ function App() {
 
   const summary = useMemo(() => analyze(filteredRows), [filteredRows]);
   const maxBody = Math.max(...summary.bodyParts.map((item) => item.pct), 1);
-  const maxDept = Math.max(...summary.departments.map((item) => item.value), 1);
+  const maxDept = Math.max(...departments.map((item) => item.value), 1);
 
   const maxMaleBody = Math.max(...maleSummary.bodyParts.map((item) => item.pct), 1);
   const maxFemaleBody = Math.max(...femaleSummary.bodyParts.map((item) => item.pct), 1);
@@ -901,7 +914,7 @@ function App() {
               <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
               จำนวนผู้ตอบตามหน่วยงาน
             </h2>
-            <BarList data={summary.departments} maxValue={maxDept} unit=" คน" />
+            <BarList data={departments} maxValue={maxDept} unit=" คน" />
           </section>
         )}
 
