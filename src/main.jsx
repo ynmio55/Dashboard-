@@ -323,8 +323,13 @@ function BarList({ data, maxValue, unit = '%', compact = false, colorMapper }) {
         }
 
         return (
-          <div className="grid grid-cols-[minmax(120px,200px)_1fr_70px] gap-4 items-center group" key={item.label || item.key}>
-            <span className="text-sm font-medium text-slate-600 truncate group-hover:text-slate-900 transition-colors">{item.label || item.key}</span>
+          <div className="grid grid-cols-[minmax(150px,280px)_1fr_70px] gap-4 items-center group" key={item.label || item.key}>
+            <span 
+              className="text-sm font-medium text-slate-600 line-clamp-2 group-hover:text-slate-900 transition-colors"
+              title={item.label || item.key}
+            >
+              {item.label || item.key}
+            </span>
             <div className="h-4 bg-slate-100 rounded-full overflow-hidden shadow-inner">
               <div 
                 className={barClass} 
