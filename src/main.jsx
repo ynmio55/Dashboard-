@@ -8,26 +8,17 @@ import {
   ClipboardList,
   Download,
   Home,
+  ListChecks,
   MonitorCog,
   RefreshCw,
   Siren,
   Users,
+  X,
 } from 'lucide-react';
 import './styles.css';
 
 const CSV_URL =
   'https://docs.google.com/spreadsheets/d/1YsO7jR_0Z_xBef-03ACPYlIJ8Pb47FtdNds0ObrRhoE/gviz/tq?tqx=out:csv&gid=1870394303';
-
-const ROSA_BASELINE = {
-  total: 25,
-  needsFix: 19,
-  levels: [
-    { label: 'ต่ำ', value: 1, color: '#16885a' },
-    { label: 'ปานกลาง', value: 5, color: '#1f7af0' },
-    { label: 'สูง', value: 17, color: '#ff7a1a' },
-    { label: 'สูงมาก', value: 2, color: '#df324b' },
-  ],
-};
 
 const BODY_PARTS = [
   { key: 'ไหล่', column: '2.ไหล่ รวม', x: 48, y: 24, w: 26, h: 12, rx: 8 },
@@ -152,6 +143,7 @@ function analyze(rows) {
   const knowledgeAvg = avg(knowledgeRows.map((row) => row.Kรวม));
   const behaviorAvg = avg(behaviorRows.map((row) => row.Beเฉลี่ย));
   const currentMsds = rows.filter((row) => row['ในระยะเวลา 7 วันที่ผ่านมา ท่านเคยมีอาการ ปวด/ชา/เมื่อยล้า ตามส่วนของร่างกายข้างต้น ที่เกิดจากการทำงานหรือไม่'] === 'เคย').length;
+  const departmentCount = new Set(rows.map((row) => row['หน่วยงานที่สังกัด  ']?.trim()).filter(Boolean)).size;
 
   return {
     total: rows.length,
@@ -166,7 +158,7 @@ function analyze(rows) {
     behaviorItems,
     currentMsdsPct: rows.length ? (currentMsds / rows.length) * 100 : 0,
     highestBody,
-    rosaNeedsFixPct: (ROSA_BASELINE.needsFix / ROSA_BASELINE.total) * 100,
+    departmentCount,
   };
 }
 
@@ -174,8 +166,8 @@ function rowsFromCsv(csv) {
   const [headers, ...records] = parseCsv(csv);
   return records
     .filter((record) => record.some((cell) => cell.trim() !== ''))
-    .map((record) => {
-      const row = { __headers: headers };
+    .map((record, index) => {
+      const row = { __headers: headers, __rowNumber: index + 2 };
       headers.forEach((header, index) => {
         row[header] = record[index] || '';
       });
@@ -185,30 +177,51 @@ function rowsFromCsv(csv) {
 
 function MetricCard({ icon: Icon, title, value, sub, color }) {
   return (
-    <section className="metric-card" style={{ '--accent': color }}>
-      <div>
-        <p>{title}</p>
-        <strong>{value}</strong>
-        <span>{sub}</span>
+    <section 
+      className="flex flex-col justify-between p-6 bg-white rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group"
+      style={{ borderLeftColor: color, borderLeftWidth: '6px' }}
+    >
+      <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all duration-300 pointer-events-none">
+        <Icon size={80} style={{ color }} />
       </div>
-      <Icon size={38} strokeWidth={1.7} />
+      <div className="relative z-10 flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
+          <strong className="block text-4xl font-bold tracking-tight text-slate-800 mb-2" style={{ color }}>{value}</strong>
+          <span className="text-xs font-medium text-slate-400 bg-slate-50 py-1 px-2 rounded-md">{sub}</span>
+        </div>
+      </div>
     </section>
   );
 }
 
 function BarList({ data, maxValue, unit = '%', compact = false }) {
+  const tones = [
+    'from-rose-500 to-rose-400', 'from-orange-500 to-orange-400', 
+    'from-amber-500 to-amber-400', 'from-yellow-500 to-yellow-400',
+    'from-emerald-500 to-emerald-400', 'from-blue-500 to-blue-400',
+    'from-indigo-500 to-indigo-400', 'from-cyan-500 to-cyan-400',
+    'from-slate-500 to-slate-400', 'from-red-600 to-red-500'
+  ];
+
   return (
-    <div className={compact ? 'bar-list compact' : 'bar-list'}>
+    <div className={`grid ${compact ? 'gap-3' : 'gap-4'}`}>
       {data.map((item, index) => {
         const value = item.pct ?? item.value ?? item.score;
         const width = maxValue ? (value / maxValue) * 100 : 0;
+        const gradient = tones[index % tones.length];
         return (
-          <div className="bar-row" key={item.label || item.key}>
-            <span>{item.label || item.key}</span>
-            <div className="bar-track">
-              <div className={`bar-fill tone-${index}`} style={{ width: `${Math.max(width, 4)}%` }} />
+          <div className="grid grid-cols-[minmax(120px,200px)_1fr_70px] gap-4 items-center group" key={item.label || item.key}>
+            <span className="text-sm font-medium text-slate-600 truncate group-hover:text-slate-900 transition-colors">{item.label || item.key}</span>
+            <div className="h-4 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+              <div 
+                className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-1000 ease-out`} 
+                style={{ width: `${Math.max(width, 2)}%` }} 
+              />
             </div>
-            <b>{unit === 'คะแนน' ? value.toFixed(1) : `${Math.round(value)}${unit}`}</b>
+            <b className="text-sm font-semibold text-slate-700 text-right">
+              {unit === 'คะแนน' ? value.toFixed(1) : `${Math.round(value)}${unit}`}
+            </b>
           </div>
         );
       })}
@@ -216,76 +229,235 @@ function BarList({ data, maxValue, unit = '%', compact = false }) {
   );
 }
 
-function Donut({ data }) {
-  const total = data.reduce((sum, item) => sum + item.value, 0);
-  let start = 0;
-  const stops = data.map((item) => {
-    const angle = total ? (item.value / total) * 360 : 0;
-    const segment = `${item.color} ${start}deg ${start + angle}deg`;
-    start += angle;
-    return segment;
-  });
+const BODY_SHAPES = [
+  { key: 'คอ', cx: 50, cy: 45, rx: 10, ry: 7 },
+  { key: 'ไหล่', cx: 21, cy: 56, rx: 14, ry: 9 },
+  { key: 'ไหล่', cx: 79, cy: 56, rx: 14, ry: 9 },
+  { key: 'หลังส่วนบน', cx: 50, cy: 68, rx: 18, ry: 12 },
+  { key: 'หลังส่วนล่าง', cx: 50, cy: 95, rx: 18, ry: 12 },
+  { key: 'สะโพก', cx: 50, cy: 115, rx: 24, ry: 8 },
+  { key: 'แขนท่อนล่าง', cx: 21, cy: 110, rx: 8, ry: 18 },
+  { key: 'แขนท่อนล่าง', cx: 79, cy: 110, rx: 8, ry: 18 },
+  { key: 'มือ/ข้อมือ', cx: 21, cy: 135, rx: 8, ry: 8 },
+  { key: 'มือ/ข้อมือ', cx: 79, cy: 135, rx: 8, ry: 8 },
+  { key: 'เข่า', cx: 41, cy: 155, rx: 8, ry: 8 },
+  { key: 'เข่า', cx: 59, cy: 155, rx: 8, ry: 8 },
+  { key: 'น่อง', cx: 41, cy: 180, rx: 7, ry: 16 },
+  { key: 'น่อง', cx: 59, cy: 180, rx: 7, ry: 16 },
+  { key: 'เท้า/ข้อเท้า', cx: 41, cy: 205, rx: 10, ry: 6 },
+  { key: 'เท้า/ข้อเท้า', cx: 59, cy: 205, rx: 10, ry: 6 },
+];
+
+function BodyMap({ parts }) {
+  const [selected, setSelected] = useState(null);
+  const byKey = Object.fromEntries(parts.map((part) => [part.key, part]));
+  const colorFor = (part) => {
+    if (!part) return '#f1f5f9';
+    if (part.pct >= 85) return '#be123c'; // dark red
+    if (part.pct >= 75) return '#ef4444'; // red
+    if (part.pct >= 50) return '#f59e0b'; // amber/orange
+    return '#d97706'; // light brown
+  };
 
   return (
-    <div className="donut-wrap">
-      <div className="donut" style={{ background: `conic-gradient(${stops.join(', ')})` }}>
-        <div>
-          <strong>{total}</strong>
-          <span>คน</span>
+    <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6">
+      
+      <div className="relative flex flex-col items-center justify-center bg-slate-50/30 p-8 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        
+        <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'radial-gradient(#94a3b8 2px, transparent 2px)', backgroundSize: '24px 24px' }}></div>
+
+        <div className="relative z-10 mb-8 bg-white/90 backdrop-blur-md px-6 py-2.5 rounded-full border border-slate-200/50 shadow-sm flex items-center gap-2.5 text-sm font-medium text-slate-600">
+          <span className="text-base">💡</span>
+          คลิกที่ตำแหน่งบนแผนที่ เพื่อดูรายละเอียด
+        </div>
+
+        <svg viewBox="0 0 100 220" className="relative z-10 w-full max-w-[280px] drop-shadow-[0_10px_20px_rgba(0,0,0,0.08)] transition-transform hover:scale-[1.02] duration-500" role="img" aria-label="Body map">
+          <g fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1.5">
+            {/* Head */}
+            <ellipse cx="50" cy="20" rx="14" ry="18" />
+            {/* Neck */}
+            <rect x="44" y="38" width="12" height="15" />
+            {/* Torso */}
+            <rect x="32" y="52" width="36" height="58" />
+            {/* Upper arms */}
+            <rect x="14" y="52" width="14" height="35" rx="7" />
+            <rect x="72" y="52" width="14" height="35" rx="7" />
+            {/* Lower arms */}
+            <rect x="14" y="92" width="14" height="35" rx="7" />
+            <rect x="72" y="92" width="14" height="35" rx="7" />
+            {/* Thighs */}
+            <rect x="34" y="115" width="14" height="40" rx="5" />
+            <rect x="52" y="115" width="14" height="40" rx="5" />
+            {/* Calves */}
+            <rect x="34" y="160" width="14" height="40" rx="5" />
+            <rect x="52" y="160" width="14" height="40" rx="5" />
+          </g>
+
+          {BODY_SHAPES.map((shape, i) => (
+            <ellipse
+              key={i}
+              cx={shape.cx}
+              cy={shape.cy}
+              rx={shape.rx}
+              ry={shape.ry}
+              fill={colorFor(byKey[shape.key])}
+              stroke="white"
+              strokeWidth="1.5"
+              className={`transition-all duration-300 hover:opacity-80 cursor-pointer ${selected?.key === shape.key ? 'stroke-slate-800 stroke-[3px]' : ''}`}
+              onClick={() => setSelected(byKey[shape.key])}
+            />
+          ))}
+        </svg>
+      </div>
+
+      <div className="flex flex-col gap-6">
+        
+        <div className="flex-1 bg-slate-50/50 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center p-8 text-center transition-all duration-500">
+          {!selected ? (
+            <div className="animate-in fade-in zoom-in duration-500">
+              <div className="text-5xl mb-4 animate-[bounce_2s_infinite]">👉</div>
+              <p className="text-slate-500 font-medium leading-relaxed">
+                คลิกที่ตำแหน่งบนแผนที่<br/>เพื่อดูรายละเอียด
+              </p>
+            </div>
+          ) : (
+            <div className="animate-in fade-in zoom-in duration-300 w-full">
+              <strong className="block text-2xl font-bold text-slate-800 mb-2">{selected.key}</strong>
+              <span className="block text-sm font-medium text-slate-500 uppercase tracking-wide mb-4 pb-4 border-b border-slate-200/50">ตำแหน่งที่พบสูงสุด</span>
+              <b className="block text-5xl font-black text-rose-500 my-2 tracking-tighter">{selected.pct.toFixed(1)}%</b>
+              <p className="text-sm text-slate-600 leading-relaxed mt-4">
+                <span className="font-semibold text-slate-800">{selected.hit}</span> จากกลุ่ม Pre-test <span className="font-semibold text-slate-800">{Math.round(selected.pct)}%</span> มีคะแนนอาการมากกว่า 0
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+          <h3 className="flex items-center gap-2 font-bold text-slate-800 mb-5">
+            <span className="text-lg">🎨</span> ระดับความชุก MSDs
+          </h3>
+          <div className="space-y-3.5">
+            <div className="flex items-center gap-3 text-sm text-slate-600">
+              <div className="w-4 h-4 rounded-full bg-[#be123c] shadow-sm"></div>
+              <span><b className="text-slate-700">≥ 85%</b> สูงมาก — แก้ไขเร่งด่วน</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-slate-600">
+              <div className="w-4 h-4 rounded-full bg-[#ef4444] shadow-sm"></div>
+              <span><b className="text-slate-700">75-84%</b> สูง — ให้ความสำคัญ</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-slate-600">
+              <div className="w-4 h-4 rounded-full bg-[#f59e0b] shadow-sm"></div>
+              <span><b className="text-slate-700">50-74%</b> ปานกลาง — ติดตาม</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-slate-600">
+              <div className="w-4 h-4 rounded-full bg-[#d97706] shadow-sm"></div>
+              <span><b className="text-slate-700">&lt; 50%</b> ต่ำ — เฝ้าระวัง</span>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="legend">
-        {data.map((item) => (
-          <span key={item.label}>
-            <i style={{ background: item.color }} />
-            {item.label} {item.value}
-          </span>
-        ))}
+
+    </div>
+  );
+}
+
+
+
+function RowDetailModal({ row, onClose }) {
+  if (!row) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+      <div 
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">ข้อมูลผู้ตอบแบบสอบถาม (ลำดับที่ {row.__rowNumber - 1})</h2>
+            <p className="text-sm text-slate-500 mt-1">ประทับเวลา: {row['ประทับเวลา']}</p>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+        
+        <div className="overflow-y-auto p-6 space-y-4 flex-grow custom-scrollbar">
+          {row.__headers.map((header, idx) => {
+            if (!header) return null;
+            const value = row[header];
+            if (!value) return null; // Skip empty answers to keep it clean
+            
+            return (
+              <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-6 p-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-colors">
+                <div className="sm:w-1/2 font-semibold text-slate-700 text-sm">{header}</div>
+                <div className="sm:w-1/2 text-slate-600 text-sm bg-slate-50 sm:bg-transparent p-3 sm:p-0 rounded-lg">{value}</div>
+              </div>
+            );
+          })}
+        </div>
+        
+        <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+          <button 
+            onClick={onClose}
+            className="px-6 py-2 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-full transition-colors shadow-sm"
+          >
+            ปิดหน้าต่าง
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-function BodyMap({ parts }) {
-  const selected = parts[0];
-  const byKey = Object.fromEntries(parts.map((part) => [part.key, part]));
-  const colorFor = (part) => {
-    if (!part) return '#dbe5ee';
-    if (part.pct >= 85) return '#d83a50';
-    if (part.pct >= 75) return '#eb6876';
-    if (part.pct >= 50) return '#f5be42';
-    return '#d4ad65';
-  };
+function ResponseTable({ rows, limit, onRowClick }) {
+  const visibleRows = [...rows].reverse().slice(0, limit || rows.length);
 
   return (
-    <div className="body-map-grid">
-      <svg viewBox="0 0 100 132" className="body-svg" role="img" aria-label="Body map">
-        <ellipse cx="50" cy="14" rx="12" ry="16" fill="#dfe8ef" stroke="#8aa1b3" />
-        <rect x="45" y="28" width="10" height="14" rx="5" fill={colorFor(byKey.คอ)} stroke="#a54555" />
-        <rect x="24" y="25" width="52" height="15" rx="10" fill={colorFor(byKey.ไหล่)} stroke="#9a3044" />
-        <rect x="33" y="22" width="9" height="33" rx="5" fill="#dfe8ef" stroke="#8aa1b3" />
-        <rect x="59" y="22" width="9" height="33" rx="5" fill="#dfe8ef" stroke="#8aa1b3" />
-        <rect x="35" y="34" width="30" height="54" rx="18" fill="#dbe6ef" stroke="#8aa1b3" />
-        {BODY_PARTS.map((part) => (
-          <rect
-            key={part.key}
-            x={part.x}
-            y={part.y}
-            width={part.w}
-            height={part.h}
-            rx={part.rx}
-            fill={colorFor(byKey[part.key])}
-            stroke="#b28428"
-            className="body-part"
-          />
-        ))}
-      </svg>
-      <div className="body-detail">
-        <strong>{selected?.key || '-'}</strong>
-        <span>ตำแหน่งที่พบสูงสุด</span>
-        <b>{selected ? `${selected.pct.toFixed(1)}%` : '-'}</b>
-        <p>{selected ? `${selected.hit} จากกลุ่ม Pre-test ${Math.round(selected.pct)}% มีคะแนนอาการมากกว่า 0` : 'ไม่มีข้อมูล'}</p>
-      </div>
+    <div className="overflow-auto max-h-[500px] border border-slate-200 rounded-xl shadow-sm bg-white">
+      <table className="w-full min-w-[1000px] text-sm text-left">
+        <thead className="text-xs text-slate-600 uppercase bg-slate-50 sticky top-0 z-10 backdrop-blur-md bg-white/90">
+          <tr>
+            <th className="px-6 py-4 font-semibold">ลำดับที่</th>
+            <th className="px-6 py-4 font-semibold">ประทับเวลา</th>
+            <th className="px-6 py-4 font-semibold">ระยะ</th>
+            <th className="px-6 py-4 font-semibold">เพศ</th>
+            <th className="px-6 py-4 font-semibold">หน่วยงาน</th>
+            <th className="px-6 py-4 font-semibold">อาการมากที่สุด</th>
+            <th className="px-6 py-4 font-semibold">Kรวม</th>
+            <th className="px-6 py-4 font-semibold">Beเฉลี่ย</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {visibleRows.map((row) => (
+            <tr 
+              key={`${row.__rowNumber}-${row['ประทับเวลา']}`} 
+              className="hover:bg-sky-50 transition-colors cursor-pointer"
+              onClick={() => onRowClick && onRowClick(row)}
+            >
+              <td className="px-6 py-4 font-medium text-slate-900">{row.__rowNumber - 1}</td>
+              <td className="px-6 py-4 text-slate-500">{row['ประทับเวลา'] || '-'}</td>
+              <td className="px-6 py-4">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  row['Pre-test / Post-test'] === 'Post-test' 
+                    ? 'bg-amber-100 text-amber-800' 
+                    : 'bg-sky-100 text-sky-800'
+                }`}>
+                  {row['Pre-test / Post-test'] || '-'}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-slate-600">{row['เพศ'] || '-'}</td>
+              <td className="px-6 py-4 text-slate-600">{row['หน่วยงานที่สังกัด  '] || '-'}</td>
+              <td className="px-6 py-4 text-slate-600">{row['หากเคยมีอาการ โปรดระบุบริเวณที่มีอาการมากที่สุด'] || '-'}</td>
+              <td className="px-6 py-4 font-medium text-slate-700">{row.Kรวม || '-'}</td>
+              <td className="px-6 py-4 font-medium text-slate-700">{row.Beเฉลี่ย || '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -294,6 +466,7 @@ function App() {
   const [rows, setRows] = useState([]);
   const [status, setStatus] = useState('กำลังโหลดข้อมูลจาก Google Sheets...');
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedRow, setSelectedRow] = useState(null);
 
   async function loadData() {
     setStatus('กำลังโหลดข้อมูลจาก Google Sheets...');
@@ -301,7 +474,7 @@ function App() {
       const response = await fetch(CSV_URL);
       const text = await response.text();
       setRows(rowsFromCsv(text));
-      setStatus(`อัปเดตล่าสุดจากชีต: ${new Date().toLocaleString('th-TH')}`);
+      setStatus(`อัปเดตล่าสุด: ${new Date().toLocaleString('th-TH')}`);
     } catch (error) {
       setStatus(`โหลดข้อมูลไม่สำเร็จ: ${error.message}`);
     }
@@ -316,109 +489,138 @@ function App() {
   const maxDept = Math.max(...summary.departments.map((item) => item.value), 1);
 
   return (
-    <main>
-      <header className="hero">
-        <div className="hero-icon">
-          <MonitorCog />
-        </div>
-        <div>
-          <h1>Dashboard การยศาสตร์ในบุคลากรที่ปฏิบัติงานกับคอมพิวเตอร์</h1>
-          <p>กลุ่มงานอาชีวเวชกรรม โรงพยาบาลสกลนคร | ปีงบประมาณ 2569</p>
-        </div>
-        <div className="hero-meta">
-          <span>
-            <ClipboardList size={16} /> ระยะ: Pre-test / Post-test
-          </span>
-          <small>{status}</small>
+    <main className="min-h-screen bg-slate-50 pb-20 font-sans">
+      {selectedRow && (
+        <RowDetailModal row={selectedRow} onClose={() => setSelectedRow(null)} />
+      )}
+      <header className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-800 to-sky-700 text-white px-6 py-10 md:py-14 md:px-12 shadow-lg">
+        <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-pattern"></div>
+        <div className="relative z-10 w-full px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div className="flex-shrink-0 w-20 h-20 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-xl">
+            <MonitorCog size={40} className="text-sky-300" />
+          </div>
+          <div className="flex-grow">
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-sky-100">
+              Dashboard การยศาสตร์ในบุคลากรที่ปฏิบัติงานกับคอมพิวเตอร์
+            </h1>
+            <p className="text-sky-200 font-medium text-lg">กลุ่มงานอาชีวเวชกรรม โรงพยาบาลสกลนคร | ปีงบประมาณ 2569</p>
+          </div>
+          <div className="flex flex-col items-start md:items-end gap-3 mt-4 md:mt-0">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-sm font-semibold text-sm text-sky-50">
+              <ClipboardList size={16} /> ระยะ: Pre-test / Post-test
+            </span>
+            <small className="text-sky-200/80 font-medium text-xs bg-black/20 px-3 py-1 rounded-full">{status}</small>
+          </div>
         </div>
       </header>
 
-      <nav className="tabs">
-        {[
-          ['overview', Home, 'ภาพรวม'],
-          ['msds', Siren, 'MSDs อาการปวด'],
-          ['rosa', BarChart3, 'ROSA ความเสี่ยง'],
-          ['knowledge', Brain, 'ความรู้ & พฤติกรรม'],
-          ['departments', Building2, 'รายหน่วยงาน'],
-        ].map(([id, Icon, label]) => (
-          <button className={activeTab === id ? 'active' : ''} key={id} onClick={() => setActiveTab(id)}>
-            <Icon size={17} />
-            {label}
+      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm overflow-x-auto">
+        <div className="w-full px-4 md:px-8 flex items-center gap-2 md:gap-4 h-16">
+          {[
+            ['overview', Home, 'ภาพรวม'],
+            ['msds', Siren, 'MSDs อาการปวด'],
+            ['knowledge', Brain, 'ความรู้ & พฤติกรรม'],
+            ['departments', Building2, 'รายหน่วยงาน'],
+            ['responses', ListChecks, 'ข้อมูลรายแถว'],
+          ].map(([id, Icon, label]) => (
+            <button 
+              key={id} 
+              onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-200 ${
+                activeTab === id 
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 translate-y-[-1px]' 
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+              }`}
+            >
+              <Icon size={18} />
+              {label}
+            </button>
+          ))}
+          <div className="flex-grow"></div>
+          <button 
+            className="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-sky-600 hover:bg-sky-50 transition-colors whitespace-nowrap" 
+            onClick={loadData}
+          >
+            <RefreshCw size={16} /> รีเฟรช
           </button>
-        ))}
-        <button className="refresh" onClick={loadData}>
-          <RefreshCw size={17} />
-          รีเฟรช
-        </button>
-        <a className="refresh" href={CSV_URL}>
-          <Download size={17} />
-          CSV
-        </a>
+          <a 
+            className="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-emerald-600 hover:bg-emerald-50 transition-colors whitespace-nowrap" 
+            href={CSV_URL}
+            target="_blank" rel="noreferrer"
+          >
+            <Download size={16} /> CSV
+          </a>
+        </div>
       </nav>
 
-      <section className="page">
-        <div className="metrics">
-          <MetricCard icon={Users} title="ผู้ตอบแบบสอบถาม" value={summary.total.toLocaleString('th-TH')} sub={`Pre-test ${summary.pre} + Post ${summary.post}`} color="#1877f2" />
-          <MetricCard icon={BarChart3} title="ประเมิน ROSA" value={ROSA_BASELINE.total} sub="คน (จาก baseline ในภาพ)" color="#12b6d6" />
-          <MetricCard icon={Brain} title="คะแนนความรู้" value={`${summary.knowledgeAvg.toFixed(2)}/10`} sub="ค่าเฉลี่ยจาก Kรวม" color="#11865d" />
-          <MetricCard icon={ClipboardList} title="คะแนนพฤติกรรม" value={`${summary.behaviorAvg.toFixed(2)}/5`} sub="ค่าเฉลี่ยจาก Beเฉลี่ย" color="#f97316" />
-          <MetricCard icon={Siren} title="มีอาการ MSDs 7 วัน" value={`${summary.currentMsdsPct.toFixed(1)}%`} sub="จากคำถามอาการใน 7 วันที่ผ่านมา" color="#dc3545" />
-          <MetricCard icon={AlertTriangle} title="ROSA ≥5" value={`${summary.rosaNeedsFixPct.toFixed(0)}%`} sub={`${ROSA_BASELINE.needsFix} จาก ${ROSA_BASELINE.total} คน`} color="#6f42c1" />
-        </div>
+      <section className="w-full px-4 md:px-8 py-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {activeTab === 'overview' && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <MetricCard icon={Users} title="ผู้ตอบแบบสอบถามทั้งหมด" value={summary.total.toLocaleString('th-TH')} sub={`Pre-test ${summary.pre} + Post ${summary.post}`} color="#3b82f6" />
+              <MetricCard icon={ClipboardList} title="ทำแบบทดสอบ Pre-test" value={summary.pre.toLocaleString('th-TH')} sub={summary.total ? `${((summary.pre / summary.total) * 100).toFixed(1)}% ของคำตอบทั้งหมด` : '-'} color="#0ea5e9" />
+              <MetricCard icon={Brain} title="คะแนนความรู้เฉลี่ย" value={`${summary.knowledgeAvg.toFixed(2)}/10`} sub="คะแนนจาก 10 ข้อ" color="#10b981" />
+              <MetricCard icon={ClipboardList} title="คะแนนพฤติกรรมเฉลี่ย" value={`${summary.behaviorAvg.toFixed(2)}/5`} sub="คะแนนเต็ม 5" color="#f59e0b" />
+              <MetricCard icon={Siren} title="พบอาการ MSDs ใน 7 วัน" value={`${summary.currentMsdsPct.toFixed(1)}%`} sub="ผู้มีอาการปวด/ชา/เมื่อยล้า" color="#ef4444" />
+              <MetricCard icon={BarChart3} title="ตำแหน่งที่ปวดมากที่สุด" value={summary.highestBody.key} sub={`${summary.highestBody.pct.toFixed(1)}% จากกลุ่ม Pre-test`} color="#8b5cf6" />
+            </div>
 
-        <div className="insight">
-          <AlertTriangle />
-          <b>ข้อค้นพบสำคัญ:</b>
-          <span>
-            ตำแหน่งที่มีอาการสูงสุดคือ {summary.highestBody.key} ({summary.highestBody.pct.toFixed(1)}%) ขณะที่คะแนนพฤติกรรมเฉลี่ยอยู่ที่ {summary.behaviorAvg.toFixed(2)}/5 และคะแนนความรู้เฉลี่ย {summary.knowledgeAvg.toFixed(2)}/10
-          </span>
-        </div>
+            <div className="flex items-start gap-4 p-5 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-100 shadow-sm">
+              <div className="p-3 bg-orange-100 rounded-xl text-orange-600">
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <b className="block text-orange-900 text-base mb-1">ข้อค้นพบสำคัญ</b>
+                <span className="text-orange-800 text-sm leading-relaxed">
+                  ตำแหน่งที่มีอาการสูงสุดคือ <strong className="font-bold">{summary.highestBody.key}</strong> ({summary.highestBody.pct.toFixed(1)}%) ขณะที่คะแนนพฤติกรรมเฉลี่ยอยู่ที่ <strong className="font-bold">{summary.behaviorAvg.toFixed(2)}/5</strong> และคะแนนความรู้เฉลี่ย <strong className="font-bold">{summary.knowledgeAvg.toFixed(2)}/10</strong>
+                </span>
+              </div>
+            </div>
+          </>
+        )}
 
         {(activeTab === 'overview' || activeTab === 'msds') && (
-          <div className="grid two">
-            <section className="panel">
-              <h2>
-                <i className="dot red" /> ความชุกอาการ MSDs ตามตำแหน่งร่างกาย (%)
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+              <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+                <span className="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.6)]"></span> 
+                ความชุกอาการ MSDs ตามตำแหน่งร่างกาย (%)
               </h2>
               <BarList data={summary.bodyParts} maxValue={maxBody} />
             </section>
-            <section className="panel">
-              <h2>
-                <i className="dot purple" /> Body Map - แผนที่อาการ MSDs จำแนกตำแหน่งร่างกาย
+            <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+              <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+                <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span> 
+                Body Map — แผนที่อาการ MSDs จำแนกตำแหน่งร่างกาย (n={summary.pre})
               </h2>
               <BodyMap parts={summary.bodyParts} />
             </section>
           </div>
         )}
 
-        {(activeTab === 'overview' || activeTab === 'rosa') && (
-          <div className="grid two">
-            <section className="panel">
-              <h2>
-                <i className="dot purple" /> ระดับความเสี่ยง ROSA (n={ROSA_BASELINE.total})
-              </h2>
-              <Donut data={ROSA_BASELINE.levels} />
-            </section>
-            <section className="panel">
-              <h2>
-                <i className="dot cyan" /> ชั่วโมงใช้งานคอมพิวเตอร์ต่อวัน
-              </h2>
-              <BarList data={summary.workHours} maxValue={Math.max(...summary.workHours.map((item) => item.value), 1)} unit=" คน" compact />
-            </section>
-          </div>
+        {activeTab === 'overview' && (
+          <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+            <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+              <span className="w-3 h-3 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.6)]"></span> 
+              ชั่วโมงใช้งานคอมพิวเตอร์ต่อวัน
+            </h2>
+            <BarList data={summary.workHours} maxValue={Math.max(...summary.workHours.map((item) => item.value), 1)} unit=" คน" compact />
+          </section>
         )}
 
         {(activeTab === 'overview' || activeTab === 'knowledge') && (
-          <div className="grid two">
-            <section className="panel">
-              <h2>
-                <i className="dot green" /> ความรู้รายข้อ (% ตอบถูก)
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+              <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+                <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></span> 
+                ความรู้รายข้อ (% ตอบถูก)
               </h2>
               <BarList data={summary.knowledgeItems} maxValue={100} />
             </section>
-            <section className="panel">
-              <h2>
-                <i className="dot orange" /> พฤติกรรมรายข้อ (คะแนนเฉลี่ย)
+            <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+              <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+                <span className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]"></span> 
+                พฤติกรรมรายข้อ (คะแนนเฉลี่ย)
               </h2>
               <BarList data={summary.behaviorItems} maxValue={5} unit="คะแนน" />
             </section>
@@ -426,11 +628,38 @@ function App() {
         )}
 
         {activeTab === 'departments' && (
-          <section className="panel">
-            <h2>
-              <i className="dot blue" /> จำนวนผู้ตอบตามหน่วยงาน
+          <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+            <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+              <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
+              จำนวนผู้ตอบตามหน่วยงาน
             </h2>
             <BarList data={summary.departments} maxValue={maxDept} unit=" คน" />
+          </section>
+        )}
+
+        {activeTab === 'overview' && (
+          <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+            <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+              <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span> 
+              ข้อมูลรายแถวล่าสุดจาก Google Sheet
+            </h2>
+            <ResponseTable rows={rows} limit={12} onRowClick={setSelectedRow} />
+          </section>
+        )}
+
+        {activeTab === 'responses' && (
+          <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-100">
+              <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800">
+                <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
+                ข้อมูลรายแถวทั้งหมด ({rows.length.toLocaleString('th-TH')} รายการ)
+              </h2>
+            </div>
+            <div className="bg-slate-50 text-slate-500 text-sm p-4 rounded-xl mb-6 flex items-start gap-3 border border-slate-100">
+              <AlertTriangle className="text-slate-400 shrink-0 mt-0.5" size={18} />
+              <p>แสดงตามข้อมูลที่ Google Sheets ส่งผ่านลิงก์ export แบบไม่ต้องลงชื่อเข้าใช้ ถ้าในชีตเปิด filter อยู่ จำนวนนี้อาจน้อยกว่าแถวทั้งหมดที่เห็นในหน้า Google Sheet</p>
+            </div>
+            <ResponseTable rows={rows} onRowClick={setSelectedRow} />
           </section>
         )}
       </section>
