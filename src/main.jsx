@@ -1099,18 +1099,18 @@ function App() {
       <header className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-800 to-sky-700 text-white px-6 py-10 md:py-14 md:px-12 shadow-lg">
         <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-pattern"></div>
         <div className="relative z-10 w-full px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center gap-6">
-          <div className="flex-shrink-0 w-20 h-20 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-xl">
-            <MonitorCog size={40} className="text-sky-300" />
+          <div className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-xl">
+            <MonitorCog size={36} className="text-sky-300" />
           </div>
           <div className="flex-grow">
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-sky-100">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight mb-1 text-transparent bg-clip-text bg-gradient-to-r from-white to-sky-100 whitespace-normal md:whitespace-nowrap">
               Dashboard การยศาสตร์ในบุคลากรที่ปฏิบัติงานกับคอมพิวเตอร์
             </h1>
-            <p className="text-sky-200 font-medium text-lg">กลุ่มงานอาชีวเวชกรรม โรงพยาบาลสกลนคร | ปีงบประมาณ 2569</p>
+            <p className="text-sky-200 font-medium text-xs sm:text-sm md:text-base">กลุ่มงานอาชีวเวชกรรม โรงพยาบาลสกลนคร | ปีงบประมาณ 2569</p>
           </div>
           <div className="flex flex-col items-start md:items-end gap-3 mt-4 md:mt-0">
             <div className="flex gap-2 flex-wrap justify-start md:justify-end">
-              <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-sm font-semibold text-sm text-sky-50">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-sm font-semibold text-sm text-sky-50">
                 <ClipboardList size={16} /> ระยะ: Pre-test / Post-test
               </span>
               {activeTab !== 'gender-compare' && activeTab !== 'analysis-tab' && (
@@ -1497,9 +1497,9 @@ function App() {
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
             <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
               <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span> 
-              ข้อมูลรายแถวล่าสุด ({selectedGender === 'all' ? `ทั้งหมด ${filteredRows.length.toLocaleString('th-TH')} รายการ` : `เฉพาะเพศ${selectedGender} ${filteredRows.length.toLocaleString('th-TH')} รายการ`}) จาก Google Sheet
+              ข้อมูลรายแถว ({selectedGender === 'all' ? `ทั้งหมด ${filteredRows.length.toLocaleString('th-TH')} รายการ` : `เฉพาะเพศ${selectedGender} ${filteredRows.length.toLocaleString('th-TH')} รายการ`}) จาก Google Sheet
             </h2>
-            <ResponseTable rows={filteredRows} limit={12} onRowClick={setSelectedRow} />
+            <ResponseTable rows={filteredRows} onRowClick={setSelectedRow} />
           </section>
         )}
 
@@ -1508,7 +1508,7 @@ function App() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-100">
               <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800">
                 <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
-                ข้อมูลรายแถว ({selectedGender === 'all' ? `ทั้งหมด ${filteredRows.length.toLocaleString('th-TH')} รายการ` : `เฉพาะเพศ${selectedGender} ${filteredRows.length.toLocaleString('th-TH')} รายการ`})
+                ข้อมูลรายแถว ({selectedGender === 'all' ? `ทั้งหมด ${filteredRows.length.toLocaleString('th-TH')} รายการ` : `เฉพาะเพศ${selectedGender} ${filteredRows.length.toLocaleString('th-TH')} รายการ`}) จาก Google Sheet
               </h2>
             </div>
             <div className="bg-slate-50 text-slate-500 text-sm p-4 rounded-xl mb-6 flex items-start gap-3 border border-slate-100">
