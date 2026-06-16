@@ -10,10 +10,13 @@ import {
   Download,
   Home,
   ListChecks,
+  LogIn,
+  LogOut,
   MonitorCog,
   RefreshCw,
   Siren,
   Users,
+  UserPlus,
   X,
 } from 'lucide-react';
 import {
@@ -1254,15 +1257,121 @@ function RosaTableView({ rows }) {
   );
 }
 
+function AuthView({ onLoginSuccess }) {
+  const [isLoginMode, setIsLoginMode] = useState(true);
+  const [formData, setFormData] = useState({
+    username: '', password: '', employee_id: '', first_name: '', last_name: '', position_name: '', role: 'user', work_group: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const endpoint = isLoginMode ? '/api/login' : '/api/register';
+      const res = await fetch(`http://localhost:3001${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'เกิดข้อผิดพลาด');
+      
+      if (isLoginMode) {
+        localStorage.setItem('token', data.token);
+        onLoginSuccess(data.user);
+      } else {
+        setIsLoginMode(true);
+        setError('ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="max-w-md mx-auto bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+      <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">
+        {isLoginMode ? 'เข้าสู่ระบบเพื่อดูข้อมูล' : 'ลงทะเบียนบัญชีใหม่'}
+      </h2>
+      {error && (
+        <div className={`p-3 rounded-xl mb-4 text-sm font-medium ${error.includes('สำเร็จ') ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+          {error}
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">Username</label>
+          <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} required />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">Password</label>
+          <input type="password" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
+        </div>
+        {!isLoginMode && (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">ชื่อ</label>
+                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">นามสกุล</label>
+                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">กลุ่มงาน</label>
+                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" value={formData.work_group} onChange={e => setFormData({...formData, work_group: e.target.value})} required />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">แผนก</label>
+                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" value={formData.position_name} onChange={e => setFormData({...formData, position_name: e.target.value})} required />
+              </div>
+            </div>
+          </>
+        )}
+        <button disabled={loading} type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-colors disabled:opacity-50">
+          {loading ? 'กำลังดำเนินการ...' : (isLoginMode ? 'เข้าสู่ระบบ' : 'ลงทะเบียน')}
+        </button>
+      </form>
+      <div className="mt-6 text-center text-sm text-slate-500">
+        {isLoginMode ? 'ยังไม่มีบัญชี? ' : 'มีบัญชีแล้ว? '}
+        <button onClick={() => {setIsLoginMode(!isLoginMode); setError('');}} className="font-bold text-blue-600 hover:underline">
+          {isLoginMode ? 'ลงทะเบียน' : 'เข้าสู่ระบบ'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function App() {
   const [rows, setRows] = useState([]);
   const [status, setStatus] = useState('กำลังโหลดข้อมูลจาก Google Sheets...');
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedRow, setSelectedRow] = useState(null);
   const [selectedGender, setSelectedGender] = useState('all');
+  const [user, setUser] = useState(null);
 
-  const [analysisData, setAnalysisData] = useState(null);
-  const [rosaRows, setRosaRows] = useState([]);
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('http://localhost:3001/api/me', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => res.json())
+        .then(data => { if (data.user) setUser(data.user); })
+        .catch(() => localStorage.removeItem('token'));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+  };
 
   async function loadData() {
     setStatus('กำลังโหลดข้อมูลจาก Google Sheets...');
@@ -1413,6 +1522,18 @@ function App() {
             </button>
           ))}
           <div className="flex-grow"></div>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-slate-600">👤 {user.first_name || user.username}</span>
+              <button onClick={handleLogout} className="flex items-center gap-1 px-3 py-1.5 rounded-full font-bold text-xs text-rose-600 hover:bg-rose-50 transition-colors">
+                <LogOut size={14} /> ออกจากระบบ
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setActiveTab('responses')} className="flex items-center gap-1 px-3 py-1.5 rounded-full font-bold text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+              <LogIn size={14} /> เข้าสู่ระบบ
+            </button>
+          )}
           <button 
             className="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-sky-600 hover:bg-sky-50 transition-colors whitespace-nowrap" 
             onClick={loadData}
@@ -1734,11 +1855,22 @@ function App() {
               <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span> 
               ข้อมูลรายแถว ({selectedGender === 'all' ? `ทั้งหมด ${filteredRows.length.toLocaleString('th-TH')} รายการ` : `เฉพาะเพศ${selectedGender} ${filteredRows.length.toLocaleString('th-TH')} รายการ`}) จาก Google Sheet
             </h2>
-            <ResponseTable rows={filteredRows} onRowClick={setSelectedRow} />
+            {user ? (
+              <ResponseTable rows={filteredRows} onRowClick={setSelectedRow} />
+            ) : (
+              <div className="text-center py-10 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
+                <p className="text-slate-500 font-medium mb-4">ต้องเข้าสู่ระบบก่อนจึงจะดูข้อมูลรายแถวได้</p>
+                <button onClick={() => setActiveTab('responses')} className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition-colors">เข้าสู่ระบบ</button>
+              </div>
+            )}
           </section>
         )}
 
-        {activeTab === 'responses' && (
+        {activeTab === 'responses' && !user && (
+          <AuthView onLoginSuccess={setUser} />
+        )}
+
+        {activeTab === 'responses' && user && (
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-100">
               <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800">
