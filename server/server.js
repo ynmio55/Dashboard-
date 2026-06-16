@@ -20,7 +20,7 @@ const pool = new Pool({
   port: 5432,
   user: 'postgres',
   password: 'Jame@123',
-  database: 'postgres',
+  database: 'mio1',
 });
 
 // Initialize database table

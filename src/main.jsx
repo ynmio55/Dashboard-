@@ -1357,6 +1357,8 @@ function App() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [selectedGender, setSelectedGender] = useState('all');
   const [user, setUser] = useState(null);
+  const [rosaRows, setRosaRows] = useState([]);
+  const [analysisData, setAnalysisData] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -1638,7 +1640,12 @@ function App() {
           </section>
         )}
 
-        {activeTab === 'analysis-tab' && (
+        {activeTab === 'analysis-tab' && !user && (
+          <div className="flex justify-center py-12 animate-in fade-in zoom-in duration-300">
+            <AuthView onLoginSuccess={(u) => setUser(u)} />
+          </div>
+        )}
+        {activeTab === 'analysis-tab' && user && (
           <RosaTableView rows={rosaRows} />
         )}
 
