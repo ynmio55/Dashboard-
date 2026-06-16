@@ -14,7 +14,6 @@ import {
   RefreshCw,
   Siren,
   Users,
-  X,
 } from 'lucide-react';
 import './styles.css';
 
@@ -24,6 +23,8 @@ const DEPT_CSV_URL =
   'https://docs.google.com/spreadsheets/d/1YsO7jR_0Z_xBef-03ACPYlIJ8Pb47FtdNds0ObrRhoE/gviz/tq?tqx=out:csv&gid=128247472';
 const ANALYSIS_CSV_URL =
   'https://docs.google.com/spreadsheets/d/1YsO7jR_0Z_xBef-03ACPYlIJ8Pb47FtdNds0ObrRhoE/gviz/tq?tqx=out:csv&gid=182615786';
+const ROSA_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/1WsbgfPe6yLv9DYAZaatO-Cdg3UK0JBd-P9shZ0Ivaag/gviz/tq?tqx=out:csv&gid=746996457';
 
 const BODY_PARTS = [
   { key: 'ไหล่', column: '2.ไหล่ รวม', x: 48, y: 24, w: 26, h: 12, rx: 8 },
@@ -1023,6 +1024,62 @@ function AnalysisView({ analysisData }) {
   );
 }
 
+function getRosaLevel(score) {
+  const s = Number(score);
+  if (isNaN(s)) return { text: '-', bg: 'bg-slate-100', textCol: 'text-slate-800' };
+  if (s > 5) return { text: 'เร่งด่วน', bg: 'bg-rose-100', textCol: 'text-rose-800' };
+  if (s === 5) return { text: 'ต้องแก้ไข', bg: 'bg-amber-100', textCol: 'text-amber-800' };
+  return { text: 'ควรตรวจสอบ', bg: 'bg-emerald-100', textCol: 'text-emerald-800' };
+}
+
+function RosaTableView({ rows }) {
+  const validRows = rows.filter(row => row['ชื่อ-สกุล']?.trim() && row['Matrix5']?.trim());
+
+  return (
+    <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-100">
+        <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800">
+          <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
+          ข้อมูลการวิเคราะห์ระดับอาการ (ROSA)
+        </h2>
+      </div>
+      <div className="overflow-auto max-h-[600px] border border-slate-200 rounded-xl shadow-sm bg-white">
+        <table className="w-full min-w-[800px] text-sm text-left">
+          <thead className="text-xs text-slate-600 uppercase bg-slate-50 sticky top-0 z-10 backdrop-blur-md bg-white/90">
+            <tr>
+              <th className="px-6 py-4 font-semibold w-16">ลำดับที่</th>
+              <th className="px-6 py-4 font-semibold">ชื่อ-สกุล</th>
+              <th className="px-6 py-4 font-semibold">หน่วยงาน</th>
+              <th className="px-6 py-4 font-semibold text-center">คะแนน ROSA (Matrix5)</th>
+              <th className="px-6 py-4 font-semibold text-center">ระดับ</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {validRows.map((row, idx) => {
+              const level = getRosaLevel(row['Matrix5']);
+              return (
+                <tr key={idx} className="hover:bg-sky-50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-slate-900">{idx + 1}</td>
+                  <td className="px-6 py-4 text-slate-600">{row['ชื่อ-สกุล'] || '-'}</td>
+                  <td className="px-6 py-4 text-slate-600">{row['หน่วยงาน']?.replace(/^\d+\.\s*/, '') || '-'}</td>
+                  <td className="px-6 py-4 font-bold text-slate-700 text-center">
+                    {row['Matrix5'] || '-'}
+                  </td>
+                  <td className="px-6 py-4 font-bold text-center">
+                    <span className={`inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-bold ${level.bg} ${level.textCol}`}>
+                      {level.text}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function App() {
   const [rows, setRows] = useState([]);
   const [status, setStatus] = useState('กำลังโหลดข้อมูลจาก Google Sheets...');
@@ -1031,21 +1088,25 @@ function App() {
   const [selectedGender, setSelectedGender] = useState('all');
 
   const [analysisData, setAnalysisData] = useState(null);
+  const [rosaRows, setRosaRows] = useState([]);
 
   async function loadData() {
     setStatus('กำลังโหลดข้อมูลจาก Google Sheets...');
     try {
       const cacheBuster = `&_t=${Date.now()}`;
-      const [mainRes, deptRes, analysisRes] = await Promise.all([
+      const [mainRes, deptRes, analysisRes, rosaRes] = await Promise.all([
         fetch(`${CSV_URL}${cacheBuster}`),
         fetch(`${DEPT_CSV_URL}${cacheBuster}`),
-        fetch(`${ANALYSIS_CSV_URL}${cacheBuster}`)
+        fetch(`${ANALYSIS_CSV_URL}${cacheBuster}`),
+        fetch(`${ROSA_CSV_URL}${cacheBuster}`)
       ]);
       const mainText = await mainRes.text();
       const deptText = await deptRes.text();
       const analysisText = await analysisRes.text();
+      const rosaText = await rosaRes.text();
       
       setRows(rowsFromCsv(mainText));
+      setRosaRows(rowsFromCsv(rosaText));
       
       // Pre-calculated department counts are now generated dynamically client-side
       const deptData = [];
@@ -1282,8 +1343,8 @@ function App() {
           </section>
         )}
 
-        {activeTab === 'analysis-tab' && analysisData && (
-          <AnalysisView analysisData={analysisData} />
+        {activeTab === 'analysis-tab' && (
+          <RosaTableView rows={rosaRows} />
         )}
 
         {activeTab === 'gender-compare' && (
