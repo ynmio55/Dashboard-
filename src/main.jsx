@@ -1206,13 +1206,14 @@ function RosaSummaryDashboard({ validRows }) {
   );
 }
 
-function RosaTableView({ rows }) {
+function RosaTableView({ rows, user, onLoginSuccess }) {
   const validRows = rows.filter(row => row['ชื่อ-สกุล']?.trim() && row['Matrix5']?.trim());
 
   return (
-    <div>
+    <div className="space-y-8">
       <RosaSummaryDashboard validRows={validRows} />
-      <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+      {user ? (
+        <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-100">
           <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800">
           <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
@@ -1253,6 +1254,11 @@ function RosaTableView({ rows }) {
         </table>
       </div>
     </section>
+      ) : (
+        <div className="flex justify-center py-12 animate-in fade-in zoom-in duration-300 bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+          <AuthView onLoginSuccess={onLoginSuccess} />
+        </div>
+      )}
     </div>
   );
 }
@@ -1640,13 +1646,8 @@ function App() {
           </section>
         )}
 
-        {activeTab === 'analysis-tab' && !user && (
-          <div className="flex justify-center py-12 animate-in fade-in zoom-in duration-300">
-            <AuthView onLoginSuccess={(u) => setUser(u)} />
-          </div>
-        )}
-        {activeTab === 'analysis-tab' && user && (
-          <RosaTableView rows={rosaRows} />
+        {activeTab === 'analysis-tab' && (
+          <RosaTableView rows={rosaRows} user={user} onLoginSuccess={(u) => setUser(u)} />
         )}
 
         {activeTab === 'gender-compare' && (
