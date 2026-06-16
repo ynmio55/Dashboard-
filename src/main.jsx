@@ -270,10 +270,10 @@ function rowsFromCsv(csv) {
 function MetricCard({ icon: Icon, title, value, sub, color }) {
   return (
     <section 
-      className="flex flex-col justify-between p-6 bg-white rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group"
+      className="flex flex-col justify-between p-4 sm:p-6 bg-white rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group"
       style={{ borderLeftColor: color, borderLeftWidth: '6px' }}
     >
-      <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all duration-300 pointer-events-none">
+      <div className="absolute top-0 right-0 p-4 sm:p-6 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all duration-300 pointer-events-none">
         <Icon size={80} style={{ color }} />
       </div>
       <div className="relative z-10 flex items-start justify-between">
@@ -324,20 +324,20 @@ function BarList({ data, maxValue, unit = '%', compact = false, colorMapper }) {
         }
 
         return (
-          <div className="grid grid-cols-[minmax(150px,280px)_1fr_70px] gap-4 items-center group" key={item.label || item.key}>
+          <div className="grid grid-cols-[1fr_60px] sm:grid-cols-[180px_1fr_60px] md:grid-cols-[240px_1fr_70px] gap-x-4 gap-y-1.5 items-center group" key={item.label || item.key}>
             <span 
-              className="text-sm font-medium text-slate-600 line-clamp-2 group-hover:text-slate-900 transition-colors"
+              className="text-xs sm:text-sm font-semibold text-slate-600 line-clamp-2 group-hover:text-slate-900 transition-colors col-span-2 sm:col-span-1"
               title={item.label || item.key}
             >
               {item.label || item.key}
             </span>
-            <div className="h-4 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+            <div className="h-3 sm:h-4 bg-slate-100 rounded-full overflow-hidden shadow-inner col-span-1">
               <div 
                 className={barClass} 
                 style={{ width: `${Math.max(width, 2)}%`, ...barStyle }} 
               />
             </div>
-            <b className="text-sm font-semibold text-slate-700 text-right">
+            <b className="text-xs sm:text-sm font-bold text-slate-700 text-right col-span-1">
               {unit === 'คะแนน' ? value.toFixed(1) : `${Math.round(value)}${unit}`}
             </b>
           </div>
@@ -377,7 +377,7 @@ function BodyMap({ parts }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6">
       
-      <div className="relative flex flex-col items-center justify-center bg-slate-50/30 p-8 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="relative flex flex-col items-center justify-center bg-slate-50/30 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
         
         <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'radial-gradient(#94a3b8 2px, transparent 2px)', backgroundSize: '24px 24px' }}></div>
 
@@ -427,7 +427,7 @@ function BodyMap({ parts }) {
 
       <div className="flex flex-col gap-6">
         
-        <div className="flex-1 bg-slate-50/50 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center p-8 text-center transition-all duration-500">
+        <div className="flex-1 bg-slate-50/50 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 text-center transition-all duration-500">
           {!selected ? (
             <div className="animate-in fade-in zoom-in duration-500">
               <div className="text-5xl mb-4 animate-[bounce_2s_infinite]">👈</div>
@@ -491,9 +491,9 @@ function DualBodyMap({ maleParts, femaleParts, maleCount, femaleCount }) {
   const selectedFemale = selectedKey ? femaleByKey[selectedKey] : null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[1fr_350px] gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6">
       
-      <div className="relative flex flex-col items-center justify-center bg-slate-50/30 p-8 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="relative flex flex-col items-center justify-center bg-slate-50/30 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'radial-gradient(#94a3b8 2px, transparent 2px)', backgroundSize: '24px 24px' }}></div>
         
         <div className="relative z-10 mb-8 bg-white/90 backdrop-blur-md px-6 py-2.5 rounded-full border border-slate-200/50 shadow-sm flex items-center gap-2.5 text-sm font-medium text-slate-600">
@@ -577,7 +577,7 @@ function DualBodyMap({ maleParts, femaleParts, maleCount, femaleCount }) {
 
       {/* Compare Detail Panel */}
       <div className="flex flex-col gap-6">
-        <div className="flex-1 bg-slate-50/50 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-center p-6 transition-all duration-500">
+        <div className="flex-1 bg-slate-50/50 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-center p-4 sm:p-6 transition-all duration-500">
           {!selectedKey ? (
             <div className="text-center py-8">
               <div className="text-5xl mb-4 animate-[bounce_2s_infinite]">👈</div>
@@ -802,13 +802,13 @@ function AnalysisView({ analysisData }) {
     <div className="space-y-8 animate-in fade-in duration-300">
       
       {/* KPIs & Target Card */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-600">
+            <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600">
               <Brain size={20} />
             </div>
-            <span className="text-sm font-semibold text-slate-500">ความรู้เฉลี่ยโครงการ (Pre-test)</span>
+            <span className="text-xs sm:text-sm font-semibold text-slate-500">ความรู้เฉลี่ยโครงการ (Pre-test)</span>
           </div>
           <div className="flex items-baseline gap-2">
             <strong className="text-4xl font-extrabold text-slate-800">{analysisData.knowledgeAvg.pre.toFixed(2)}</strong>
@@ -821,12 +821,12 @@ function AnalysisView({ analysisData }) {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 bg-amber-50 rounded-xl text-amber-600">
+            <div className="p-2 bg-amber-50 rounded-xl text-amber-600">
               <ClipboardList size={20} />
             </div>
-            <span className="text-sm font-semibold text-slate-500">พฤติกรรมเฉลี่ยโครงการ (Pre-test)</span>
+            <span className="text-xs sm:text-sm font-semibold text-slate-500">พฤติกรรมเฉลี่ยโครงการ (Pre-test)</span>
           </div>
           <div className="flex items-baseline gap-2">
             <strong className="text-4xl font-extrabold text-slate-800">{analysisData.behaviorAvg.pre.toFixed(2)}</strong>
@@ -839,7 +839,7 @@ function AnalysisView({ analysisData }) {
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-indigo-900 to-slate-800 p-6 rounded-2xl text-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-900 to-slate-800 p-4 sm:p-6 rounded-2xl text-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
             <MonitorCog size={100} />
           </div>
@@ -858,7 +858,7 @@ function AnalysisView({ analysisData }) {
       </div>
 
       {/* Detailed Distributions per Body Part */}
-      <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+      <section className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
         <div className="pb-4 border-b border-slate-100 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="flex items-center gap-2.5 text-lg font-bold text-slate-800">

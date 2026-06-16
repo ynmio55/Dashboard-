@@ -4,3 +4,22 @@
 @theme {
   --font-sans: "Noto Sans Thai", "system-ui", "sans-serif";
 }
+
+/* Responsive utility overrides for small screen sizes */
+@media (max-width: 639.9px) {
+  .p-8 {
+    padding: 1rem !important;
+  }
+  .rounded-3xl {
+    border-radius: 1rem !important;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 767.9px) {
+  .p-8 {
+    padding: 1.5rem !important;
+  }
+  .rounded-3xl {
+    border-radius: 1.5rem !important;
+  }
+}
