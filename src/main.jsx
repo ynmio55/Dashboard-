@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Siren,
   Users,
+  X,
 } from 'lucide-react';
 import {
   PieChart,
