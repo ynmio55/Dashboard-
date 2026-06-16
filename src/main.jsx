@@ -382,7 +382,7 @@ function BodyMap({ parts }) {
 
         <div className="relative z-10 mb-8 bg-white/90 backdrop-blur-md px-6 py-2.5 rounded-full border border-slate-200/50 shadow-sm flex items-center gap-2.5 text-sm font-medium text-slate-600">
           <span className="text-base">💡</span>
-          คลิกที่ตำแหน่งบนแผนที่ เพื่อดูรายละเอียด
+          คลิกตามตำแหน่งของสัดส่วนร่างกาย
         </div>
 
         <svg viewBox="0 0 100 220" className="relative z-10 w-full max-w-[280px] drop-shadow-[0_10px_20px_rgba(0,0,0,0.08)] transition-transform hover:scale-[1.02] duration-500" role="img" aria-label="Body map">
@@ -429,9 +429,9 @@ function BodyMap({ parts }) {
         <div className="flex-1 bg-slate-50/50 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center p-8 text-center transition-all duration-500">
           {!selected ? (
             <div className="animate-in fade-in zoom-in duration-500">
-              <div className="text-5xl mb-4 animate-[bounce_2s_infinite]">👉</div>
+              <div className="text-5xl mb-4 animate-[bounce_2s_infinite]">👈</div>
               <p className="text-slate-500 font-medium leading-relaxed">
-                คลิกที่ตำแหน่งบนแผนที่<br/>เพื่อดูรายละเอียด
+                คลิกตามตำแหน่งของสัดส่วนร่างกาย
               </p>
             </div>
           ) : (
@@ -579,7 +579,7 @@ function DualBodyMap({ maleParts, femaleParts, maleCount, femaleCount }) {
         <div className="flex-1 bg-slate-50/50 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-center p-6 transition-all duration-500">
           {!selectedKey ? (
             <div className="text-center py-8">
-              <div className="text-5xl mb-4 animate-[bounce_2s_infinite]">👉</div>
+              <div className="text-5xl mb-4 animate-[bounce_2s_infinite]">👈</div>
               <p className="text-slate-500 font-medium leading-relaxed text-sm">
                 คลิกตำแหน่งบนแผนที่ร่างกาย<br/>เพื่อเปรียบเทียบอาการ ชาย / หญิง
               </p>
@@ -1494,9 +1494,9 @@ function App() {
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
             <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
               <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span> 
-              ข้อมูลรายแถวล่าสุดจาก Google Sheet
+              ข้อมูลรายแถวล่าสุด{selectedGender === 'all' ? '' : ` (เฉพาะเพศ${selectedGender})`}จาก Google Sheet
             </h2>
-            <ResponseTable rows={rows} limit={12} onRowClick={setSelectedRow} />
+            <ResponseTable rows={filteredRows} limit={12} onRowClick={setSelectedRow} />
           </section>
         )}
 
@@ -1505,14 +1505,14 @@ function App() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-100">
               <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800">
                 <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
-                ข้อมูลรายแถวทั้งหมด ({rows.length.toLocaleString('th-TH')} รายการ)
+                ข้อมูลรายแถว{selectedGender === 'all' ? 'ทั้งหมด' : ` (เฉพาะเพศ${selectedGender})`} ({filteredRows.length.toLocaleString('th-TH')} รายการ)
               </h2>
             </div>
             <div className="bg-slate-50 text-slate-500 text-sm p-4 rounded-xl mb-6 flex items-start gap-3 border border-slate-100">
               <AlertTriangle className="text-slate-400 shrink-0 mt-0.5" size={18} />
               <p>แสดงตามข้อมูลที่ Google Sheets ส่งผ่านลิงก์ export แบบไม่ต้องลงชื่อเข้าใช้ ถ้าในชีตเปิด filter อยู่ จำนวนนี้อาจน้อยกว่าแถวทั้งหมดที่เห็นในหน้า Google Sheet</p>
             </div>
-            <ResponseTable rows={rows} onRowClick={setSelectedRow} />
+            <ResponseTable rows={filteredRows} onRowClick={setSelectedRow} />
           </section>
         )}
       </section>
