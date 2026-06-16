@@ -779,6 +779,7 @@ function SeverityDistributionBar({ label, pct, count, barColor }) {
 function AnalysisView({ analysisData }) {
   const [selectedPartIndex, setSelectedPartIndex] = useState(0);
   const selectedPart = analysisData.bodyParts[selectedPartIndex] || null;
+  const totalN = selectedPart ? selectedPart.severityCounts.reduce((a, b) => a + b, 0) : 170;
 
   const levelLabels = [
     'ระดับ 0 (ไม่มีอาการ)',
@@ -861,7 +862,7 @@ function AnalysisView({ analysisData }) {
           <div>
             <h2 className="flex items-center gap-2.5 text-lg font-bold text-slate-800">
               <span className="w-3 h-3 rounded-full bg-indigo-600 shadow-[0_0_10px_rgba(79,70,229,0.5)]"></span>
-              การแจกแจงระดับสัดส่วนอาการปวด (n = 168 คน)
+              การแจกแจงระดับสัดส่วนอาการปวดจำนวน {totalN} คน
             </h2>
             <p className="text-xs text-slate-400 font-medium mt-1">วิเคราะห์เจาะลึก 3 มิติ: ระดับความรุนแรง ความถี่ และอาการโดยรวม</p>
           </div>
@@ -1024,7 +1025,6 @@ function AnalysisView({ analysisData }) {
 
 function App() {
   const [rows, setRows] = useState([]);
-  const [departments, setDepartments] = useState([]);
   const [status, setStatus] = useState('กำลังโหลดข้อมูลจาก Google Sheets...');
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedRow, setSelectedRow] = useState(null);
@@ -1035,10 +1035,11 @@ function App() {
   async function loadData() {
     setStatus('กำลังโหลดข้อมูลจาก Google Sheets...');
     try {
+      const cacheBuster = `&_t=${Date.now()}`;
       const [mainRes, deptRes, analysisRes] = await Promise.all([
-        fetch(CSV_URL),
-        fetch(DEPT_CSV_URL),
-        fetch(ANALYSIS_CSV_URL)
+        fetch(`${CSV_URL}${cacheBuster}`),
+        fetch(`${DEPT_CSV_URL}${cacheBuster}`),
+        fetch(`${ANALYSIS_CSV_URL}${cacheBuster}`)
       ]);
       const mainText = await mainRes.text();
       const deptText = await deptRes.text();
@@ -1046,15 +1047,8 @@ function App() {
       
       setRows(rowsFromCsv(mainText));
       
-      const deptData = rowsFromCsv(deptText)
-        .map(row => ({
-          label: row['หน่วยงานที่สังกัด  '] || row[Object.keys(row)[0]],
-          value: toNumber(row['COUNTA ของ ชื่อ-สกุล'] || row[Object.keys(row)[1]])
-        }))
-        .filter(item => item.label && item.label !== 'ผลรวม' && item.value > 0)
-        .sort((a, b) => b.value - a.value);
-        
-      setDepartments(deptData);
+      // Pre-calculated department counts are now generated dynamically client-side
+      const deptData = [];
 
       const parsedAnalysis = parseAnalysisSheet(analysisText);
       setAnalysisData(parsedAnalysis);
@@ -1083,6 +1077,15 @@ function App() {
 
   const summary = useMemo(() => analyze(filteredRows), [filteredRows]);
   const maxBody = Math.max(...summary.bodyParts.map((item) => item.pct), 1);
+
+  const departments = useMemo(() => {
+    const counts = countBy(filteredRows, 'หน่วยงานที่สังกัด  ');
+    return Object.entries(counts)
+      .map(([label, value]) => ({ label, value }))
+      .filter(item => item.label && item.label !== 'ไม่ระบุ' && item.label !== 'ผลรวม' && item.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [filteredRows]);
+
   const maxDept = Math.max(...departments.map((item) => item.value), 1);
 
   const maxMaleBody = Math.max(...maleSummary.bodyParts.map((item) => item.pct), 1);
@@ -1273,7 +1276,7 @@ function App() {
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
             <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
               <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
-              จำนวนผู้ตอบตามหน่วยงาน
+              จำนวนผู้ตอบตามหน่วยงาน ({selectedGender === 'all' ? `ทั้งหมด ${filteredRows.length.toLocaleString('th-TH')} คน` : `เฉพาะเพศ${selectedGender} ${filteredRows.length.toLocaleString('th-TH')} คน`})
             </h2>
             <BarList data={departments} maxValue={maxDept} unit=" คน" />
           </section>
@@ -1494,7 +1497,7 @@ function App() {
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
             <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
               <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span> 
-              ข้อมูลรายแถวล่าสุด{selectedGender === 'all' ? '' : ` (เฉพาะเพศ${selectedGender})`}จาก Google Sheet
+              ข้อมูลรายแถวล่าสุด ({selectedGender === 'all' ? `ทั้งหมด ${filteredRows.length.toLocaleString('th-TH')} รายการ` : `เฉพาะเพศ${selectedGender} ${filteredRows.length.toLocaleString('th-TH')} รายการ`}) จาก Google Sheet
             </h2>
             <ResponseTable rows={filteredRows} limit={12} onRowClick={setSelectedRow} />
           </section>
@@ -1505,7 +1508,7 @@ function App() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-100">
               <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800">
                 <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
-                ข้อมูลรายแถว{selectedGender === 'all' ? 'ทั้งหมด' : ` (เฉพาะเพศ${selectedGender})`} ({filteredRows.length.toLocaleString('th-TH')} รายการ)
+                ข้อมูลรายแถว ({selectedGender === 'all' ? `ทั้งหมด ${filteredRows.length.toLocaleString('th-TH')} รายการ` : `เฉพาะเพศ${selectedGender} ${filteredRows.length.toLocaleString('th-TH')} รายการ`})
               </h2>
             </div>
             <div className="bg-slate-50 text-slate-500 text-sm p-4 rounded-xl mb-6 flex items-start gap-3 border border-slate-100">
