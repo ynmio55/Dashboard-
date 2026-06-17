@@ -397,9 +397,7 @@ export default function App() {
           </section>
         )}
 
-        {activeTab === 'analysis-tab' && analysisData && (
-          <AnalysisView analysisData={analysisData} />
-        )}
+
         
         {activeTab === 'analysis-tab' && (
           <RosaTableView rows={rosaRows} user={user} onGoToLogin={() => setActiveTab('responses')} />

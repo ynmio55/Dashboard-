@@ -63,6 +63,20 @@ app.post('/api/register', async (req, res) => {
       work_group 
     } = req.body;
 
+    // Validate password
+    if (!password || password.length < 8) {
+      return res.status(400).json({ error: 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร' });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({ error: 'รหัสผ่านต้องมีตัวอักษรพิมพ์ใหญ่อย่างน้อย 1 ตัว' });
+    }
+    if (!/[0-9]/.test(password)) {
+      return res.status(400).json({ error: 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว' });
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      return res.status(400).json({ error: 'รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว' });
+    }
+
     // Check if user exists
     const userCheck = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
     if (userCheck.rows.length > 0) {
