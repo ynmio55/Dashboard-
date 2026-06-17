@@ -16,6 +16,7 @@ import {
   Siren,
   Users,
   ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 import { CSV_URL, DEPT_CSV_URL, ANALYSIS_CSV_URL, ROSA_CSV_URL } from './constants';
@@ -123,25 +124,23 @@ export default function App() {
       )}
       
       {/* Sidebar Navigation */}
-      <aside className={`${isSidebarOpen ? 'w-72' : 'w-[88px]'} bg-white/80 backdrop-blur-xl border-r border-slate-200 shadow-sm flex flex-col sticky top-0 h-screen z-40 shrink-0 hidden lg:flex transition-all duration-300`}>
-        <div className={`p-6 border-b border-slate-100 flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'} min-h-[89px]`}>
-           {isSidebarOpen ? (
-             <h2 className="font-extrabold text-xl text-slate-800 flex items-center gap-3 whitespace-nowrap overflow-hidden">
-               <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0">
-                 <MonitorCog size={24} />
-               </div>
-               <span>Ergo Dashboard</span>
-             </h2>
-           ) : (
-             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0 cursor-pointer" onClick={() => setIsSidebarOpen(true)}>
+      <aside className={`${isSidebarOpen ? 'w-72' : 'w-[88px]'} bg-white/80 backdrop-blur-xl border-r border-slate-200 shadow-sm flex flex-col sticky top-0 h-screen z-40 shrink-0 hidden lg:flex transition-all duration-300 relative group`}>
+
+        <div className={`p-6 border-b border-slate-100 flex items-center ${isSidebarOpen ? 'justify-start' : 'justify-center'} min-h-[89px]`}>
+           <div className={`flex items-center gap-3 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'w-full' : 'w-10'}`}>
+             <button 
+               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+               className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0 hover:bg-blue-700 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+               title={isSidebarOpen ? "ยุบแถบเมนู" : "ขยายแถบเมนู"}
+             >
                <MonitorCog size={24} />
-             </div>
-           )}
-           {isSidebarOpen && (
-             <button onClick={() => setIsSidebarOpen(false)} className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors shrink-0">
-               <ChevronLeft size={20} />
              </button>
-           )}
+             {isSidebarOpen && (
+               <h2 className="font-extrabold text-xl text-slate-800 cursor-pointer select-none" onClick={() => setIsSidebarOpen(false)}>
+                 Ergo Dashboard
+               </h2>
+             )}
+           </div>
         </div>
         <div className="flex-grow overflow-y-auto p-4 space-y-2 overflow-x-hidden">
           {[
@@ -156,14 +155,14 @@ export default function App() {
             <button 
               key={id} 
               onClick={() => setActiveTab(id)}
-              className={`w-full flex items-center ${isSidebarOpen ? 'justify-start px-4' : 'justify-center px-0'} gap-3 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
+              className={`w-full flex items-center ${isSidebarOpen ? 'justify-start px-4' : 'justify-center px-0'} gap-3 py-3.5 rounded-xl font-bold text-base transition-all duration-200 ${
                 activeTab === id 
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 ' + (isSidebarOpen ? 'translate-x-1' : '')
                   : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 ' + (isSidebarOpen ? 'hover:translate-x-1' : '')
               }`}
               title={!isSidebarOpen ? label : ''}
             >
-              <Icon size={18} className="shrink-0" />
+              <Icon size={20} className="shrink-0" />
               {isSidebarOpen && <span className="whitespace-nowrap">{label}</span>}
             </button>
           ))}
@@ -187,35 +186,7 @@ export default function App() {
             {isSidebarOpen && <span className="whitespace-nowrap">โหลด CSV</span>}
           </a>
           
-          <div className="pt-3 border-t border-slate-200 mt-2">
-            {user ? (
-              <div className="flex flex-col gap-2">
-                {isSidebarOpen ? (
-                  <div className="px-2 py-1 bg-white rounded-lg border border-slate-100 shadow-sm flex items-center gap-2 mb-1">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                      {(user.first_name || user.username).charAt(0)}
-                    </div>
-                    <span className="text-sm font-semibold text-slate-700 truncate">{user.first_name || user.username}</span>
-                  </div>
-                ) : (
-                  <div className="flex justify-center mb-1">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm uppercase shrink-0 shadow-sm border border-slate-200" title={user.first_name || user.username}>
-                      {(user.first_name || user.username).charAt(0)}
-                    </div>
-                  </div>
-                )}
-                <button onClick={handleLogout} className={`w-full flex items-center justify-center gap-2 ${isSidebarOpen ? 'px-4' : 'px-0'} py-2 rounded-xl font-bold text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors`} title={!isSidebarOpen ? 'ออกจากระบบ' : ''}>
-                  <LogOut size={16} className="shrink-0" />
-                  {isSidebarOpen && <span className="whitespace-nowrap">ออกจากระบบ</span>}
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setActiveTab('responses')} className={`w-full flex items-center justify-center gap-2 ${isSidebarOpen ? 'px-4' : 'px-0'} py-2.5 rounded-xl font-bold text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors`} title={!isSidebarOpen ? 'เข้าสู่ระบบ' : ''}>
-                <LogIn size={16} className="shrink-0" />
-                {isSidebarOpen && <span className="whitespace-nowrap">เข้าสู่ระบบ</span>}
-              </button>
-            )}
-          </div>
+
         </div>
       </aside>
 
@@ -273,7 +244,29 @@ export default function App() {
                 </div>
               )}
             </div>
-            <small className="text-sky-200/80 font-medium text-xs bg-black/20 px-3 py-1 rounded-full">{status}</small>
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
+              <small className="text-sky-200/80 font-medium text-xs bg-black/20 px-3 py-1 rounded-full">{status}</small>
+              
+              {user ? (
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-1 pr-3 rounded-full border border-white/20 shadow-sm">
+                  <div className="w-6 h-6 rounded-full bg-white text-indigo-700 flex items-center justify-center font-bold text-[10px] uppercase shrink-0">
+                    {(user.first_name || user.username).charAt(0)}
+                  </div>
+                  <span className="text-sm font-semibold text-white">{user.first_name || user.username}</span>
+                  <button onClick={handleLogout} className="text-sky-200 hover:text-white ml-2 transition-colors" title="ออกจากระบบ">
+                    <LogOut size={16} />
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setActiveTab('responses')} 
+                  className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20 shadow-sm font-semibold text-sm text-white transition-all"
+                >
+                  <LogIn size={16} />
+                  เข้าสู่ระบบ
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -345,7 +338,7 @@ export default function App() {
         {(activeTab === 'overview' || activeTab === 'msds') && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-              <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+              <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
                 <span className="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.6)]"></span> 
                 ความชุกอาการ MSDs ตามตำแหน่งร่างกาย (%)
               </h2>
@@ -356,7 +349,7 @@ export default function App() {
               />
             </section>
             <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-              <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+              <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
                 <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span> 
                 Body Map — แผนที่อาการ MSDs จำแนกตำแหน่งร่างกาย (n={summary.pre})
               </h2>
@@ -367,7 +360,7 @@ export default function App() {
 
         {activeTab === 'overview' && (
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-            <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+            <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
               <span className="w-3 h-3 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.6)]"></span> 
               ชั่วโมงใช้งานคอมพิวเตอร์ต่อวัน
             </h2>
@@ -378,14 +371,14 @@ export default function App() {
         {(activeTab === 'overview' || activeTab === 'knowledge') && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-              <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+              <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
                 <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></span> 
                 ความรู้รายข้อ (% ตอบถูก)
               </h2>
               <BarList data={summary.knowledgeItems} maxValue={100} />
             </section>
             <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-              <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+              <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
                 <span className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]"></span> 
                 พฤติกรรมรายข้อ (คะแนนเฉลี่ย)
               </h2>
@@ -396,7 +389,7 @@ export default function App() {
 
         {activeTab === 'departments' && (
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-            <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+            <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
               <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
               จำนวนผู้ตอบตามหน่วยงาน ({selectedGender === 'all' ? `ทั้งหมด ${filteredRows.length.toLocaleString('th-TH')} คน` : `เฉพาะเพศ${selectedGender} ${filteredRows.length.toLocaleString('th-TH')} คน`})
             </h2>
@@ -505,7 +498,7 @@ export default function App() {
             {/* Dual Body Map */}
             <div className="grid grid-cols-1 gap-8 animate-in fade-in duration-300">
               <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-                <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+                <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
                   <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
                   แผนที่ร่างกายคู่จำแนกเพศ — เปรียบเทียบความชุกอาการปวด MSDs (n ชาย={maleSummary.pre}, หญิง={femaleSummary.pre})
                 </h2>
@@ -521,7 +514,7 @@ export default function App() {
             {/* Side-by-Side MSDs Bar Chart */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-300">
               <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-                <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+                <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
                   <span className="w-3.5 h-3.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] flex items-center justify-center text-[10px] text-white font-bold">♂</span> 
                   ความชุกอาการ MSDs เพศชาย (%)
                 </h2>
@@ -532,7 +525,7 @@ export default function App() {
                 />
               </section>
               <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-                <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+                <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
                   <span className="w-3.5 h-3.5 rounded-full bg-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.5)] flex items-center justify-center text-[10px] text-white font-bold">♀</span> 
                   ความชุกอาการ MSDs เพศหญิง (%)
                 </h2>
@@ -547,7 +540,7 @@ export default function App() {
             {/* Side-by-Side Knowledge and Behavior Comparison */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-300">
               <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-                <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100">
+                <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-6 pb-4 border-b border-slate-100">
                   <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></span> 
                   ความรู้รายข้อเปรียบเทียบชาย-หญิง (% ตอบถูก)
                 </h2>
@@ -582,7 +575,7 @@ export default function App() {
               </section>
 
               <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-                <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100">
+                <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-6 pb-4 border-b border-slate-100">
                   <span className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]"></span> 
                   พฤติกรรมรายข้อเปรียบเทียบชาย-หญิง (คะแนนเฉลี่ย 1-5)
                 </h2>
@@ -621,7 +614,7 @@ export default function App() {
 
         {activeTab === 'overview' && (
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-            <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800 mb-8 pb-4 border-b border-slate-100">
+            <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
               <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]"></span> 
               ข้อมูลรายแถว ({selectedGender === 'all' ? `ทั้งหมด ${filteredRows.length.toLocaleString('th-TH')} รายการ` : `เฉพาะเพศ${selectedGender} ${filteredRows.length.toLocaleString('th-TH')} รายการ`}) จาก Google Sheet
             </h2>
@@ -648,7 +641,7 @@ export default function App() {
         {activeTab === 'responses' && user && (
           <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-100">
-              <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800">
+              <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800">
                 <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
                 ข้อมูลรายแถว ({selectedGender === 'all' ? `ทั้งหมด ${filteredRows.length.toLocaleString('th-TH')} รายการ` : `เฉพาะเพศ${selectedGender} ${filteredRows.length.toLocaleString('th-TH')} รายการ`}) จาก Google Sheet
               </h2>

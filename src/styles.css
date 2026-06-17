@@ -5,6 +5,8 @@
   --font-sans: "Noto Sans Thai", "system-ui", "sans-serif";
 }
 
+
+
 /* Responsive utility overrides for small screen sizes */
 @media (max-width: 639.9px) {
   .p-8 {

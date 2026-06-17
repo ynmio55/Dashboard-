@@ -12,14 +12,14 @@ export function RosaTableView({ rows, user, onGoToLogin }) {
       {user ? (
         <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-100">
-          <h2 className="flex items-center gap-3 text-lg font-bold text-slate-800">
+          <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800">
           <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span> 
           ข้อมูลการวิเคราะห์ระดับอาการ (ROSA)
         </h2>
       </div>
       <div className="overflow-auto max-h-[600px] border border-slate-200 rounded-xl shadow-sm bg-white">
-        <table className="w-full min-w-[800px] text-sm text-left">
-          <thead className="text-xs text-slate-600 uppercase bg-slate-50 sticky top-0 z-10 backdrop-blur-md bg-white/90">
+        <table className="w-full min-w-[800px] text-base text-left">
+          <thead className="text-sm text-slate-600 uppercase bg-slate-50 sticky top-0 z-10 backdrop-blur-md bg-white/90">
             <tr>
               <th className="px-6 py-4 font-semibold w-16">ลำดับที่</th>
               <th className="px-6 py-4 font-semibold">ชื่อ-สกุล</th>
@@ -40,7 +40,7 @@ export function RosaTableView({ rows, user, onGoToLogin }) {
                     {row['Matrix5'] || '-'}
                   </td>
                   <td className="px-6 py-4 font-bold text-center">
-                    <span className={`inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-bold ${level.bg} ${level.textCol}`}>
+                    <span className={`inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold ${level.bg} ${level.textCol}`}>
                       {level.text}
                     </span>
                   </td>

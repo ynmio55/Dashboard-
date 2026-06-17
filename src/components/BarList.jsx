@@ -32,18 +32,18 @@ export function BarList({ data, maxValue, unit = '%', compact = false, colorMapp
         return (
           <div className="grid grid-cols-[1fr_60px] sm:grid-cols-[180px_1fr_60px] md:grid-cols-[240px_1fr_70px] gap-x-4 gap-y-1.5 items-center group" key={item.label || item.key}>
             <span 
-              className="text-xs sm:text-sm font-semibold text-slate-600 line-clamp-2 group-hover:text-slate-900 transition-colors col-span-2 sm:col-span-1"
+              className="text-sm sm:text-base font-bold text-slate-700 line-clamp-2 group-hover:text-slate-900 transition-colors col-span-2 sm:col-span-1"
               title={item.label || item.key}
             >
               {item.label || item.key}
             </span>
-            <div className="h-3 sm:h-4 bg-slate-100 rounded-full overflow-hidden shadow-inner col-span-1">
+            <div className="h-4 sm:h-5 bg-slate-100 rounded-full overflow-hidden shadow-inner col-span-1 mt-1 sm:mt-0">
               <div 
                 className={barClass} 
                 style={{ width: `${Math.max(width, 2)}%`, ...barStyle }} 
               />
             </div>
-            <b className="text-xs sm:text-sm font-bold text-slate-700 text-right col-span-1">
+            <b className="text-sm sm:text-base font-black text-slate-800 text-right col-span-1">
               {unit === 'คะแนน' ? value.toFixed(1) : `${Math.round(value)}${unit}`}
             </b>
           </div>
