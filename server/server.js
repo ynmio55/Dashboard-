@@ -3,12 +3,15 @@ import pg from 'pg';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const { Pool } = pg;
 
 const app = express();
-const port = 3001;
-const JWT_SECRET = 'super-secret-key-dashboard-2026'; // ควรเก็บใน .env ในโปรดักชั่น
+const port = process.env.PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-dashboard-2026';
 
 // Middleware
 app.use(cors());
@@ -16,11 +19,11 @@ app.use(express.json());
 
 // Database connection
 const pool = new Pool({
-  host: '192.168.9.121',
-  port: 5432,
-  user: 'postgres',
-  password: 'Jame@123',
-  database: 'mio1',
+  host: process.env.DB_HOST || '192.168.9.121',
+  port: process.env.DB_PORT || 5432,
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'Jame@123',
+  database: process.env.DB_NAME || 'mio1',
 });
 
 // Initialize database table
