@@ -59,29 +59,55 @@ export default function App() {
   };
 
   async function loadData() {
-    setStatus('กำลังโหลดข้อมูลจาก Google Sheets...');
+    setStatus('กำลังโหลดข้อมูลภาพรวม...');
     try {
+      // 1. Try to load from cache first for instant render
+      const cachedMain = localStorage.getItem('ergo_main_csv');
+      if (cachedMain) {
+        setRows(rowsFromCsv(cachedMain));
+        setStatus('กำลังซิงค์ข้อมูลล่าสุดจาก Google Sheets...');
+      }
+      
       const cacheBuster = `&_t=${Date.now()}`;
-      const [mainRes, deptRes, analysisRes, rosaRes] = await Promise.all([
-        fetch(`${CSV_URL}${cacheBuster}`),
-        fetch(`${DEPT_CSV_URL}${cacheBuster}`),
+      
+      // 2. Fetch fresh main data
+      const mainRes = await fetch(`${CSV_URL}${cacheBuster}`);
+      const mainText = await mainRes.text();
+      
+      // Update cache and state with fresh data
+      localStorage.setItem('ergo_main_csv', mainText);
+      setRows(rowsFromCsv(mainText));
+      setStatus('โหลดภาพรวมเสร็จสิ้น กำลังโหลดข้อมูลเบื้องหลัง...');
+
+      // 3. Load ROSA data in the background (also with caching)
+      const cachedRosa = localStorage.getItem('ergo_rosa_csv');
+      const cachedAnalysis = localStorage.getItem('ergo_analysis_csv');
+      
+      if (cachedRosa) setRosaRows(rowsFromCsv(cachedRosa));
+      if (cachedAnalysis) setAnalysisData(parseAnalysisSheet(cachedAnalysis));
+
+      Promise.all([
         fetch(`${ANALYSIS_CSV_URL}${cacheBuster}`),
         fetch(`${ROSA_CSV_URL}${cacheBuster}`)
-      ]);
-      const mainText = await mainRes.text();
-      const deptText = await deptRes.text();
-      const analysisText = await analysisRes.text();
-      const rosaText = await rosaRes.text();
-      
-      setRows(rowsFromCsv(mainText));
-      setRosaRows(rowsFromCsv(rosaText));
-      
-      const parsedAnalysis = parseAnalysisSheet(analysisText);
-      setAnalysisData(parsedAnalysis);
+      ]).then(async ([analysisRes, rosaRes]) => {
+        const analysisText = await analysisRes.text();
+        const rosaText = await rosaRes.text();
+        
+        localStorage.setItem('ergo_analysis_csv', analysisText);
+        localStorage.setItem('ergo_rosa_csv', rosaText);
+        
+        setRosaRows(rowsFromCsv(rosaText));
+        setAnalysisData(parseAnalysisSheet(analysisText));
+        
+        setStatus(`อัปเดตล่าสุด: ${new Date().toLocaleString('th-TH')}`);
+      }).catch(err => {
+        setStatus(`อัปเดตล่าสุด: ${new Date().toLocaleString('th-TH')} (โหลดเบื้องหลังไม่สำเร็จ: ${err.message})`);
+      });
 
-      setStatus(`อัปเดตล่าสุด: ${new Date().toLocaleString('th-TH')}`);
     } catch (error) {
-      setStatus(`โหลดข้อมูลไม่สำเร็จ: ${error.message}`);
+      if (!rows.length) {
+        setStatus(`โหลดข้อมูลไม่สำเร็จ: ${error.message}`);
+      }
     }
   }
 

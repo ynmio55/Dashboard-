@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/Occupational-Disease-Clinic/',
+  base: '/ODC/',
   server: {
     host: 'localhost',
     port: 4173,
