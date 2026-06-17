@@ -91,7 +91,7 @@ app.post('/api/register', async (req, res) => {
     const newUser = await pool.query(
       `INSERT INTO users 
       (employee_id, username, password_hash, first_name, last_name, position_name, role, work_group) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING user_id, username, first_name, last_name, role`,
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING user_id, username, first_name, last_name, role, position_name, work_group`,
       [employee_id || null, username, password_hash, first_name, last_name, position_name, role || 'user', work_group]
     );
 
@@ -131,7 +131,9 @@ app.post('/api/login', async (req, res) => {
         username: user.username,
         role: user.role,
         first_name: user.first_name,
-        last_name: user.last_name
+        last_name: user.last_name,
+        position_name: user.position_name,
+        work_group: user.work_group
       }, 
       JWT_SECRET, 
       { expiresIn: '24h' }
@@ -145,7 +147,9 @@ app.post('/api/login', async (req, res) => {
         username: user.username,
         first_name: user.first_name,
         last_name: user.last_name,
-        role: user.role
+        role: user.role,
+        position_name: user.position_name,
+        work_group: user.work_group
       }
     });
   } catch (err) {
