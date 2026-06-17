@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Check, X } from 'lucide-react';
 
 export function AuthView({ onLoginSuccess }) {
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -12,6 +13,29 @@ export function AuthView({ onLoginSuccess }) {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (!isLoginMode) {
+      if (formData.password.length < 8) {
+        setError('รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+        setLoading(false);
+        return;
+      }
+      if (!/[A-Z]/.test(formData.password)) {
+        setError('รหัสผ่านต้องมีตัวอักษรพิมพ์ใหญ่อย่างน้อย 1 ตัว');
+        setLoading(false);
+        return;
+      }
+      if (!/[0-9]/.test(formData.password)) {
+        setError('รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว');
+        setLoading(false);
+        return;
+      }
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
+        setError('รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว');
+        setLoading(false);
+        return;
+      }
+    }
     try {
       const endpoint = isLoginMode ? '/api/login' : '/api/register';
       const res = await fetch(`http://localhost:3001${endpoint}`, {
@@ -54,6 +78,50 @@ export function AuthView({ onLoginSuccess }) {
         <div>
           <label className="block text-xs font-semibold text-slate-500 mb-1">Password</label>
           <input type="password" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
+          {!isLoginMode && (
+            <div className="mt-2 ml-1 space-y-1">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium">
+                {formData.password.length >= 8 ? (
+                  <Check size={14} className="text-emerald-500" />
+                ) : (
+                  <X size={14} className="text-rose-500" />
+                )}
+                <span className={formData.password.length >= 8 ? 'text-emerald-600' : 'text-slate-500'}>
+                  มีความยาวอย่างน้อย 8 ตัวอักษร
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] font-medium">
+                {/[A-Z]/.test(formData.password) ? (
+                  <Check size={14} className="text-emerald-500" />
+                ) : (
+                  <X size={14} className="text-rose-500" />
+                )}
+                <span className={/[A-Z]/.test(formData.password) ? 'text-emerald-600' : 'text-slate-500'}>
+                  มีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] font-medium">
+                {/[0-9]/.test(formData.password) ? (
+                  <Check size={14} className="text-emerald-500" />
+                ) : (
+                  <X size={14} className="text-rose-500" />
+                )}
+                <span className={/[0-9]/.test(formData.password) ? 'text-emerald-600' : 'text-slate-500'}>
+                  มีตัวเลขอย่างน้อย 1 ตัว
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] font-medium">
+                {/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? (
+                  <Check size={14} className="text-emerald-500" />
+                ) : (
+                  <X size={14} className="text-rose-500" />
+                )}
+                <span className={/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'text-emerald-600' : 'text-slate-500'}>
+                  มีอักขระพิเศษอย่างน้อย 1 ตัว
+                </span>
+              </div>
+            </div>
+          )}
         </div>
         {!isLoginMode && (
           <>
@@ -69,12 +137,12 @@ export function AuthView({ onLoginSuccess }) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">กลุ่มงาน</label>
-                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" value={formData.work_group} onChange={e => setFormData({...formData, work_group: e.target.value})} required />
+                <label className="block text-xs font-semibold text-slate-500 mb-1">ตำแหน่ง</label>
+                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" value={formData.position_name} onChange={e => setFormData({...formData, position_name: e.target.value})} required />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">แผนก</label>
-                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" value={formData.position_name} onChange={e => setFormData({...formData, position_name: e.target.value})} required />
+                <label className="block text-xs font-semibold text-slate-500 mb-1">กลุ่มงาน</label>
+                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" value={formData.work_group} onChange={e => setFormData({...formData, work_group: e.target.value})} required />
               </div>
             </div>
           </>
