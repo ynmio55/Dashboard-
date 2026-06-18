@@ -4,7 +4,7 @@ import { Check, X } from 'lucide-react';
 export function AuthView({ onLoginSuccess }) {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [formData, setFormData] = useState({
-    username: '', password: '', employee_id: '', first_name: '', last_name: '', position_name: '', role: 'user', work_group: ''
+    username: '', password: '', first_name: '', last_name: '', position_name: '', role: 'user', work_group: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
