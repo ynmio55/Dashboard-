@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Check, X } from 'lucide-react';
+import api from '../services/api';
 
 export function AuthView({ onLoginSuccess }) {
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -37,14 +38,8 @@ export function AuthView({ onLoginSuccess }) {
       }
     }
     try {
-      const endpoint = isLoginMode ? '/api/login' : '/api/register';
-      const res = await fetch(`http://localhost:3001${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'เกิดข้อผิดพลาด');
+      const endpoint = isLoginMode ? '/login' : '/register';
+      const data = await api.post(endpoint, formData);
       
       if (isLoginMode) {
         localStorage.setItem('token', data.token);

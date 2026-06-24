@@ -33,6 +33,7 @@ import { ResponseTable } from './components/ResponseTable';
 import { AnalysisView } from './components/AnalysisView';
 import { RosaTableView } from './components/RosaTableView';
 import { AuthView } from './components/AuthView';
+import api from './services/api';
 
 export default function App() {
   const [rows, setRows] = useState([]);
@@ -45,12 +46,10 @@ export default function App() {
   const [analysisData, setAnalysisData] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetch('http://localhost:3001/api/me', { headers: { Authorization: `Bearer ${token}` } })
-        .then(res => res.json())
+      api.get('/me')
         .then(data => { if (data.user) setUser(data.user); })
         .catch(() => localStorage.removeItem('token'));
     }
