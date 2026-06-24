@@ -17,8 +17,8 @@ export function RosaTableView({ rows, user, onGoToLogin }) {
           ข้อมูลการวิเคราะห์ระดับอาการ (ROSA)
         </h2>
       </div>
-      <div className="overflow-auto max-h-[600px] border border-slate-200 rounded-xl shadow-sm bg-white">
-        <table className="w-full min-w-[800px] text-base text-left">
+      <div className="responsive-table overflow-auto max-h-[70dvh] sm:max-h-[600px] border border-slate-200 rounded-xl shadow-sm bg-white">
+        <table className="w-full min-w-[720px] sm:min-w-[800px] text-sm sm:text-base text-left">
           <thead className="text-sm text-slate-600 uppercase bg-slate-50 sticky top-0 z-10 backdrop-blur-md bg-white/90">
             <tr>
               <th className="px-6 py-4 font-semibold w-16">ลำดับที่</th>

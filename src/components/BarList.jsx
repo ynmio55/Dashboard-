@@ -30,7 +30,7 @@ export function BarList({ data, maxValue, unit = '%', compact = false, colorMapp
         }
 
         return (
-          <div className="grid grid-cols-[1fr_60px] sm:grid-cols-[180px_1fr_60px] md:grid-cols-[240px_1fr_70px] gap-x-4 gap-y-1.5 items-center group" key={item.label || item.key}>
+          <div className="grid grid-cols-[minmax(0,1fr)_52px] sm:grid-cols-[minmax(140px,180px)_minmax(0,1fr)_60px] lg:grid-cols-[minmax(180px,240px)_minmax(0,1fr)_70px] gap-x-3 sm:gap-x-4 gap-y-1.5 items-center group" key={item.label || item.key}>
             <span 
               className="text-sm sm:text-base font-bold text-slate-700 line-clamp-2 group-hover:text-slate-900 transition-colors col-span-2 sm:col-span-1"
               title={item.label || item.key}

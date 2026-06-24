@@ -17,7 +17,7 @@ export function DualBodyMap({ maleParts, femaleParts, maleCount, femaleCount }) 
   const selectedFemale = selectedKey ? femaleByKey[selectedKey] : null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] lg:grid-cols-[1fr_350px] gap-6">
       <div className="relative flex flex-col items-center justify-center bg-slate-50/30 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'radial-gradient(#94a3b8 2px, transparent 2px)', backgroundSize: '24px 24px' }}></div>
         

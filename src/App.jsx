@@ -11,10 +11,12 @@ import {
   ListChecks,
   LogIn,
   LogOut,
+  Menu,
   MonitorCog,
   RefreshCw,
   Siren,
   Users,
+  X,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -42,6 +44,7 @@ export default function App() {
   const [rosaRows, setRosaRows] = useState([]);
   const [analysisData, setAnalysisData] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -142,18 +145,34 @@ export default function App() {
 
   const maxMaleBody = Math.max(...maleSummary.bodyParts.map((item) => item.pct), 1);
   const maxFemaleBody = Math.max(...femaleSummary.bodyParts.map((item) => item.pct), 1);
+  const isGenderFilterVisible = activeTab !== 'gender-compare' && activeTab !== 'analysis-tab';
+  const showSidebarLabels = isSidebarOpen || isMobileSidebarOpen;
+
+  const handleNavClick = (id) => {
+    setActiveTab(id);
+    setIsMobileSidebarOpen(false);
+  };
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
       {selectedRow && (
         <RowDetailModal row={selectedRow} onClose={() => setSelectedRow(null)} />
       )}
+
+      {isMobileSidebarOpen && (
+        <button
+          type="button"
+          aria-label="ปิดเมนู"
+          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
       
       {/* Sidebar Navigation */}
-      <aside className={`${isSidebarOpen ? 'w-72' : 'w-[88px]'} bg-white/80 backdrop-blur-xl border-r border-slate-200 shadow-sm flex flex-col sticky top-0 h-screen z-40 shrink-0 hidden lg:flex transition-all duration-300 relative group`}>
+      <aside className={`sidebar-panel ${isMobileSidebarOpen ? 'sidebar-panel-open' : ''} ${isSidebarOpen ? 'lg:w-72' : 'lg:w-[88px]'} fixed inset-y-0 left-0 z-50 flex h-screen w-[min(84vw,20rem)] shrink-0 flex-col bg-white/95 backdrop-blur-xl border-r border-slate-200 shadow-2xl lg:sticky lg:top-0 lg:z-40 lg:bg-white/80 lg:shadow-sm transition-all duration-300 lg:relative group`}>
 
-        <div className={`p-6 border-b border-slate-100 flex items-center ${isSidebarOpen ? 'justify-start' : 'justify-center'} min-h-[89px]`}>
-           <div className={`flex items-center gap-3 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'w-full' : 'w-10'}`}>
+        <div className={`p-4 sm:p-5 lg:p-6 border-b border-slate-100 flex items-center ${isSidebarOpen ? 'justify-between lg:justify-start' : 'justify-between lg:justify-center'} min-h-[76px] lg:min-h-[89px]`}>
+           <div className={`flex items-center gap-3 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'w-full' : 'lg:w-10'}`}>
              <button 
                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0 hover:bg-blue-700 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -161,12 +180,20 @@ export default function App() {
              >
                <MonitorCog size={24} />
              </button>
-             {isSidebarOpen && (
-               <h2 className="font-extrabold text-xl text-slate-800 cursor-pointer select-none" onClick={() => setIsSidebarOpen(false)}>
+             {(isSidebarOpen || isMobileSidebarOpen) && (
+               <h2 className="font-extrabold text-lg sm:text-xl text-slate-800 cursor-pointer select-none" onClick={() => setIsSidebarOpen(false)}>
                  Ergo Dashboard
                </h2>
              )}
            </div>
+           <button
+             type="button"
+             className="ml-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition-colors hover:bg-slate-200 lg:hidden"
+             onClick={() => setIsMobileSidebarOpen(false)}
+             aria-label="ปิดเมนู"
+           >
+             <X size={20} />
+           </button>
         </div>
         <div className="flex-grow overflow-y-auto p-4 space-y-2 overflow-x-hidden">
           {[
@@ -180,36 +207,36 @@ export default function App() {
           ].map(([id, Icon, label]) => (
             <button 
               key={id} 
-              onClick={() => setActiveTab(id)}
-              className={`w-full flex items-center ${isSidebarOpen ? 'justify-start px-4' : 'justify-center px-0'} gap-3 py-3.5 rounded-xl font-bold text-base transition-all duration-200 ${
+              onClick={() => handleNavClick(id)}
+              className={`w-full flex items-center ${showSidebarLabels ? 'justify-start px-4' : 'justify-center px-0'} gap-3 py-3.5 rounded-xl font-bold text-base transition-all duration-200 ${
                 activeTab === id 
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 ' + (isSidebarOpen ? 'translate-x-1' : '')
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 ' + (isSidebarOpen ? 'hover:translate-x-1' : '')
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 ' + (showSidebarLabels ? 'translate-x-1' : '')
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 ' + (showSidebarLabels ? 'hover:translate-x-1' : '')
               }`}
-              title={!isSidebarOpen ? label : ''}
+              title={!showSidebarLabels ? label : ''}
             >
               <Icon size={20} className="shrink-0" />
-              {isSidebarOpen && <span className="whitespace-nowrap">{label}</span>}
+              {showSidebarLabels && <span className="whitespace-nowrap">{label}</span>}
             </button>
           ))}
         </div>
         <div className="p-4 border-t border-slate-100 space-y-3 bg-slate-50/50 overflow-x-hidden">
           <button 
-            className={`w-full flex items-center ${isSidebarOpen ? 'justify-center px-4' : 'justify-center px-0'} gap-2 py-2.5 rounded-xl font-bold text-sm text-sky-600 bg-sky-50 hover:bg-sky-100 transition-colors`}
+            className={`w-full flex items-center ${showSidebarLabels ? 'justify-center px-4' : 'justify-center px-0'} gap-2 py-2.5 rounded-xl font-bold text-sm text-sky-600 bg-sky-50 hover:bg-sky-100 transition-colors`}
             onClick={loadData}
-            title={!isSidebarOpen ? 'รีเฟรชข้อมูล' : ''}
+            title={!showSidebarLabels ? 'รีเฟรชข้อมูล' : ''}
           >
             <RefreshCw size={16} className="shrink-0" />
-            {isSidebarOpen && <span className="whitespace-nowrap">รีเฟรชข้อมูล</span>}
+            {showSidebarLabels && <span className="whitespace-nowrap">รีเฟรชข้อมูล</span>}
           </button>
           <a 
-            className={`w-full flex items-center ${isSidebarOpen ? 'justify-center px-4' : 'justify-center px-0'} gap-2 py-2.5 rounded-xl font-bold text-sm text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors`}
+            className={`w-full flex items-center ${showSidebarLabels ? 'justify-center px-4' : 'justify-center px-0'} gap-2 py-2.5 rounded-xl font-bold text-sm text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors`}
             href={CSV_URL}
             target="_blank" rel="noreferrer"
-            title={!isSidebarOpen ? 'โหลด CSV' : ''}
+            title={!showSidebarLabels ? 'โหลด CSV' : ''}
           >
             <Download size={16} className="shrink-0" />
-            {isSidebarOpen && <span className="whitespace-nowrap">โหลด CSV</span>}
+            {showSidebarLabels && <span className="whitespace-nowrap">โหลด CSV</span>}
           </a>
           
 
@@ -218,25 +245,35 @@ export default function App() {
 
       {/* Main Content Area */}
       <div className="flex-grow flex flex-col min-w-0 h-screen overflow-y-auto">
-      <header className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-800 to-sky-700 text-white px-6 py-10 md:py-14 md:px-12 shadow-lg shrink-0">
+      <header className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-800 to-sky-700 text-white px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10 lg:px-12 lg:py-12 shadow-lg shrink-0">
         <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-pattern"></div>
-        <div className="relative z-10 w-full px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center gap-6">
-          <div className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-xl">
-            <MonitorCog size={36} className="text-sky-300" />
+        <div className="relative z-10 w-full flex flex-col gap-5 lg:flex-row lg:items-center lg:gap-6">
+          <div className="flex w-full items-start gap-3 lg:w-auto">
+            <button
+              type="button"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="mt-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white backdrop-blur-md border border-white/20 shadow-md transition-colors hover:bg-white/20 lg:hidden"
+              aria-label="เปิดเมนู"
+            >
+              <Menu size={22} />
+            </button>
+            <div className="hidden sm:flex flex-shrink-0 w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-white/10 backdrop-blur-md rounded-2xl items-center justify-center border border-white/20 shadow-xl">
+              <MonitorCog size={36} className="text-sky-300" />
+            </div>
           </div>
-          <div className="flex-grow">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight mb-1 text-transparent bg-clip-text bg-gradient-to-r from-white to-sky-100 whitespace-normal md:whitespace-nowrap">
+          <div className="min-w-0 flex-grow">
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight mb-1 text-transparent bg-clip-text bg-gradient-to-r from-white to-sky-100 whitespace-normal lg:whitespace-nowrap leading-tight">
               Dashboard การยศาสตร์ในบุคลากรที่ปฏิบัติงานกับคอมพิวเตอร์
             </h1>
-            <p className="text-sky-200 font-medium text-xs sm:text-sm md:text-base">กลุ่มงานอาชีวเวชกรรม โรงพยาบาลสกลนคร | ปีงบประมาณ 2569</p>
+            <p className="text-sky-200 font-medium text-xs sm:text-sm md:text-base leading-relaxed">กลุ่มงานอาชีวเวชกรรม โรงพยาบาลสกลนคร | ปีงบประมาณ 2569</p>
           </div>
-          <div className="flex flex-col items-start md:items-end gap-3 mt-4 md:mt-0">
-            <div className="flex gap-2 flex-wrap justify-start md:justify-end">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-sm font-semibold text-sm text-sky-50">
+          <div className="flex w-full flex-col items-start gap-3 lg:mt-0 lg:w-auto lg:items-end">
+            <div className="flex max-w-full gap-2 overflow-x-auto pb-1 pr-1 sm:flex-wrap sm:overflow-visible sm:pb-0 lg:justify-end hide-scrollbar">
+              <span className="inline-flex shrink-0 items-center gap-2 px-3 sm:px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-sm font-semibold text-xs sm:text-sm text-sky-50">
                 <ClipboardList size={16} /> ระยะ: Pre-test / Post-test
               </span>
-              {activeTab !== 'gender-compare' && activeTab !== 'analysis-tab' && (
-                <div className="flex items-center bg-white/10 backdrop-blur-md p-1 rounded-full border border-white/20 shadow-sm shrink-0">
+              {isGenderFilterVisible && (
+                <div className="flex shrink-0 items-center bg-white/10 backdrop-blur-md p-1 rounded-full border border-white/20 shadow-sm">
                   <button 
                     onClick={() => setSelectedGender('all')}
                     className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
@@ -270,8 +307,8 @@ export default function App() {
                 </div>
               )}
             </div>
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
-              <small className="text-sky-200/80 font-medium text-xs bg-black/20 px-3 py-1 rounded-full">{status}</small>
+            <div className="flex max-w-full flex-col items-start gap-3 sm:flex-row sm:items-center lg:justify-end">
+              <small className="max-w-full truncate text-sky-200/80 font-medium text-xs bg-black/20 px-3 py-1 rounded-full">{status}</small>
               
               {user ? (
                 <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-1 pr-3 rounded-full border border-white/20 shadow-sm">
@@ -297,45 +334,34 @@ export default function App() {
         </div>
       </header>
 
-      {/* Mobile Navigation Bar */}
-      <nav className="lg:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm overflow-x-auto">
-        <div className="w-full px-4 flex items-center gap-2 h-14">
-          {[
-            ['overview', Home, 'ภาพรวม'],
-            ['msds', Siren, 'MSDs'],
-            ['gender-compare', ArrowLeftRight, 'เปรียบเทียบ'],
-            ['analysis-tab', ClipboardList, 'ROSA'],
-            ['knowledge', Brain, 'ความรู้'],
-            ['departments', Building2, 'หน่วยงาน'],
-            ['responses', ListChecks, 'รายแถว'],
-          ].map(([id, Icon, label]) => (
-            <button 
-              key={id} 
-              onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-xs whitespace-nowrap transition-all duration-200 ${
-                activeTab === id 
-                  ? 'bg-blue-600 text-white shadow-md' 
-                  : 'text-slate-500 hover:bg-slate-100'
-              }`}
-            >
-              <Icon size={14} />
-              {label}
-            </button>
-          ))}
-          <div className="flex-grow"></div>
+      {/* Mobile / Tablet Top Bar */}
+      <nav className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm">
+        <div className="flex h-14 w-full items-center justify-between gap-3 px-3 sm:px-5">
+          <button
+            type="button"
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20 transition-colors hover:bg-blue-700"
+            aria-label="เปิดเมนู"
+          >
+            <Menu size={21} />
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-extrabold text-slate-800">Ergo Dashboard</p>
+            <p className="truncate text-[11px] font-medium text-slate-500">{status}</p>
+          </div>
           {user ? (
-            <button onClick={handleLogout} className="flex items-center justify-center p-2 rounded-full text-rose-600 bg-rose-50 ml-2 shrink-0">
-              <LogOut size={16} />
+            <button onClick={handleLogout} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-rose-600 bg-rose-50">
+              <LogOut size={17} />
             </button>
           ) : (
-            <button onClick={() => setActiveTab('responses')} className="flex items-center justify-center p-2 rounded-full text-blue-600 bg-blue-50 ml-2 shrink-0">
-              <LogIn size={16} />
+            <button onClick={() => handleNavClick('responses')} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-blue-600 bg-blue-50">
+              <LogIn size={17} />
             </button>
           )}
         </div>
       </nav>
 
-      <section className="w-full px-4 md:px-8 py-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+      <section className="w-full px-3 sm:px-5 md:px-8 py-5 sm:py-6 md:py-8 space-y-5 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
         {activeTab === 'overview' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -395,7 +421,7 @@ export default function App() {
         )}
 
         {(activeTab === 'overview' || activeTab === 'knowledge') && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
               <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
                 <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></span> 
@@ -536,7 +562,7 @@ export default function App() {
             </div>
 
             {/* Side-by-Side MSDs Bar Chart */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-300">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-300">
               <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
                 <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-8 pb-4 border-b border-slate-100">
                   <span className="w-3.5 h-3.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] flex items-center justify-center text-[10px] text-white font-bold">♂</span> 
@@ -562,7 +588,7 @@ export default function App() {
             </div>
 
             {/* Side-by-Side Knowledge and Behavior Comparison */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-300">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-300">
               <section className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
                 <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-800 mb-6 pb-4 border-b border-slate-100">
                   <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></span> 

@@ -78,7 +78,7 @@ export function RosaSummaryDashboard({ validRows }) {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
           <h3 className="text-sm font-bold text-slate-700 mb-6 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-purple-500"></span>

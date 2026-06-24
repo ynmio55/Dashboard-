@@ -11,9 +11,9 @@ export function MetricCard({ icon: Icon, title, value, sub, color }) {
       </div>
       <div className="relative z-10 flex items-start justify-between">
         <div>
-          <p className="text-base font-semibold text-slate-500 mb-1">{title}</p>
-          <strong className="block text-5xl font-black tracking-tight text-slate-800 mb-3 mt-1" style={{ color }}>{value}</strong>
-          <span className="text-sm font-medium text-slate-500 bg-slate-50 py-1.5 px-3 rounded-md">{sub}</span>
+          <p className="text-sm sm:text-base font-semibold text-slate-500 mb-1 leading-snug">{title}</p>
+          <strong className="block text-3xl sm:text-4xl xl:text-5xl font-black tracking-tight text-slate-800 mb-3 mt-1 leading-none break-words" style={{ color }}>{value}</strong>
+          <span className="inline-block max-w-full text-xs sm:text-sm font-medium text-slate-500 bg-slate-50 py-1.5 px-3 rounded-md leading-snug break-words">{sub}</span>
         </div>
       </div>
     </section>
