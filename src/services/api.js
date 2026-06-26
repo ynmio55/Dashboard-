@@ -1,4 +1,13 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const getDefaultApiUrl = () => {
+  const { protocol, hostname } = window.location;
+  return `${protocol}//${hostname}:8080/api`;
+};
+
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+const BASE_URL =
+  configuredApiUrl && configuredApiUrl !== 'http://localhost:8080/api'
+    ? configuredApiUrl
+    : getDefaultApiUrl();
 
 const getHeaders = () => {
   const token = localStorage.getItem('token');
@@ -20,7 +29,7 @@ const handleResponse = async (response) => {
     console.error("Non-JSON Response from server:", text);
     throw new Error(`Server Error: ${response.status} - ${text.substring(0, 40)}...`);
   }
-  
+
   if (!response.ok) {
     throw new Error(data.error || 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
   }

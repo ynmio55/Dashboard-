@@ -261,7 +261,7 @@ export default function App() {
             </div>
           </div>
           <div className="min-w-0 flex-grow">
-            <h1 className="text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight mb-1 text-transparent bg-clip-text bg-gradient-to-r from-white to-sky-100 whitespace-normal lg:whitespace-nowrap leading-tight">
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight mb-1 text-transparent bg-clip-text bg-gradient-to-r from-white to-sky-100 whitespace-normal leading-tight">
               Dashboard การยศาสตร์ในบุคลากรที่ปฏิบัติงานกับคอมพิวเตอร์
             </h1>
             <p className="text-sky-200 font-medium text-xs sm:text-sm md:text-base leading-relaxed">กลุ่มงานอาชีวเวชกรรม โรงพยาบาลสกลนคร | ปีงบประมาณ 2569</p>
