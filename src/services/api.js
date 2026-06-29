@@ -1,11 +1,11 @@
 const getDefaultApiUrl = () => {
   const { protocol, hostname } = window.location;
-  return `${protocol}//${hostname}:8080/api`;
+  return `${protocol}//${hostname}:8081/api`;
 };
 
 const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
 const BASE_URL =
-  configuredApiUrl && configuredApiUrl !== 'http://localhost:8080/api'
+  configuredApiUrl && configuredApiUrl !== 'http://localhost:8081/api'
     ? configuredApiUrl
     : getDefaultApiUrl();
 
