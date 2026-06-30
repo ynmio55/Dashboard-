@@ -15,6 +15,7 @@ import {
   MonitorCog,
   RefreshCw,
   Siren,
+  UserCog,
   Users,
   X,
   ChevronLeft,
@@ -33,6 +34,7 @@ import { ResponseTable } from './components/ResponseTable';
 import { AnalysisView } from './components/AnalysisView';
 import { RosaTableView } from './components/RosaTableView';
 import { AuthView } from './components/AuthView';
+import { UserManagement } from './components/UserManagement';
 import api from './services/api';
 
 export default function App() {
@@ -195,15 +197,22 @@ export default function App() {
            </button>
         </div>
         <div className="flex-grow overflow-y-auto p-4 space-y-2 overflow-x-hidden">
-          {[
-            ['overview', Home, 'ภาพรวม'],
-            ['msds', Siren, 'MSDs อาการปวด'],
-            ['gender-compare', ArrowLeftRight, 'เปรียบเทียบชาย-หญิง'],
-            ['analysis-tab', ClipboardList, 'วิเคราะห์ระดับอาการ (ROSA)'],
-            ['knowledge', Brain, 'ความรู้ & พฤติกรรม'],
-            ['departments', Building2, 'รายหน่วยงาน'],
-            ['responses', ListChecks, 'ข้อมูลรายแถว'],
-          ].map(([id, Icon, label]) => (
+          {(() => {
+            const navItems = [
+              ['overview', Home, 'ภาพรวม'],
+              ['msds', Siren, 'MSDs อาการปวด'],
+              ['gender-compare', ArrowLeftRight, 'เปรียบเทียบชาย-หญิง'],
+              ['analysis-tab', ClipboardList, 'วิเคราะห์ระดับอาการ (ROSA)'],
+              ['knowledge', Brain, 'ความรู้ & พฤติกรรม'],
+              ['departments', Building2, 'รายหน่วยงาน'],
+              ['responses', ListChecks, 'ข้อมูลรายแถว'],
+            ];
+            
+            if (user?.role === 'admin') {
+              navItems.push(['user-management', UserCog, 'จัดการผู้ใช้']);
+            }
+            
+            return navItems.map(([id, Icon, label]) => (
             <button 
               key={id} 
               onClick={() => handleNavClick(id)}
@@ -217,7 +226,8 @@ export default function App() {
               <Icon size={20} className="shrink-0" />
               {showSidebarLabels && <span className="whitespace-nowrap">{label}</span>}
             </button>
-          ))}
+            ))
+          })()}
         </div>
         <div className="p-4 border-t border-slate-100 space-y-3 bg-slate-50/50 overflow-x-hidden">
           <button 
@@ -685,6 +695,22 @@ export default function App() {
 
         {activeTab === 'responses' && !user && (
           <AuthView onLoginSuccess={setUser} />
+        )}
+
+        {activeTab === 'user-management' && (
+          !user || user.role !== 'admin' ? (
+            <div className="text-center py-16 bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mt-8">
+              <div className="flex justify-center mb-6">
+                 <span className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 shadow-inner">
+                   <AlertTriangle size={40} />
+                 </span>
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">ไม่มีสิทธิ์เข้าถึง</h3>
+              <p className="text-slate-500 font-medium">หน้านี้สำหรับผู้ดูแลระบบ (Admin) เท่านั้น</p>
+            </div>
+          ) : (
+            <UserManagement />
+          )
         )}
 
         {activeTab === 'responses' && user && (
