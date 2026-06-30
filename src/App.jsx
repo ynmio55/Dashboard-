@@ -34,6 +34,7 @@ import { ResponseTable } from './components/ResponseTable';
 import { AnalysisView } from './components/AnalysisView';
 import { RosaTableView } from './components/RosaTableView';
 import { AuthView } from './components/AuthView';
+import { ResetPasswordView } from './components/ResetPasswordView';
 import { UserManagement } from './components/UserManagement';
 import api from './services/api';
 
@@ -48,9 +49,17 @@ export default function App() {
   const [analysisData, setAnalysisData] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [resetToken, setResetToken] = useState(null);
+
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
     if (token) {
+      setResetToken(token);
+    }
+
+    const savedToken = localStorage.getItem('token');
+    if (savedToken) {
       api.get('/me')
         .then(data => { if (data.user) setUser(data.user); })
         .catch(() => localStorage.removeItem('token'));
@@ -153,6 +162,23 @@ export default function App() {
     setActiveTab(id);
     setIsMobileSidebarOpen(false);
   };
+
+  if (resetToken) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">
+        <header className="bg-gradient-to-br from-indigo-900 via-blue-800 to-sky-700 text-white px-4 py-4 shadow-lg flex items-center gap-4">
+          <MonitorCog size={28} className="text-blue-100" />
+          <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-50 to-sky-200">
+            Ergo Dashboard
+          </h1>
+        </header>
+        <ResetPasswordView token={resetToken} onResetSuccess={() => {
+          setResetToken(null);
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
