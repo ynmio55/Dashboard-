@@ -124,6 +124,37 @@ export default function App() {
     }
   }
 
+  const handleDownloadCsv = async () => {
+    try {
+      let downloadUrl = CSV_URL;
+      let filename = 'ergo_data.csv';
+
+      if (activeTab === 'departments') {
+        downloadUrl = DEPT_CSV_URL;
+        filename = 'ergo_departments.csv';
+      } else if (activeTab === 'analysis-tab') {
+        downloadUrl = ROSA_CSV_URL;
+        filename = 'ergo_rosa.csv';
+      }
+
+      const res = await fetch(downloadUrl);
+      const text = await res.text();
+      // Add UTF-8 BOM to fix gibberish in Excel
+      const blob = new Blob(['\uFEFF' + text], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error downloading CSV:', err);
+      alert('เกิดข้อผิดพลาดในการดาวน์โหลด CSV');
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -264,15 +295,14 @@ export default function App() {
             <RefreshCw size={16} className="shrink-0" />
             {showSidebarLabels && <span className="whitespace-nowrap">รีเฟรชข้อมูล</span>}
           </button>
-          <a 
+          <button 
             className={`w-full flex items-center ${showSidebarLabels ? 'justify-center px-4' : 'justify-center px-0'} gap-2 py-2.5 rounded-xl font-bold text-sm text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors`}
-            href={CSV_URL}
-            target="_blank" rel="noreferrer"
+            onClick={handleDownloadCsv}
             title={!showSidebarLabels ? 'โหลด CSV' : ''}
           >
             <Download size={16} className="shrink-0" />
             {showSidebarLabels && <span className="whitespace-nowrap">โหลด CSV</span>}
-          </a>
+          </button>
           
 
         </div>
