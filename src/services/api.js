@@ -1,13 +1,13 @@
 const getDefaultApiUrl = () => {
-  const { protocol, hostname } = window.location;
-  return `${protocol}//${hostname}:8081/api`;
+  const { hostname } = window.location;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8081/api';
+  }
+  return 'https://api-sknhos.moph.go.th/api';
 };
 
 const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
-const BASE_URL =
-  configuredApiUrl && configuredApiUrl !== 'http://localhost:8081/api'
-    ? configuredApiUrl
-    : getDefaultApiUrl();
+const BASE_URL = configuredApiUrl || getDefaultApiUrl();
 
 const getHeaders = () => {
   const token = localStorage.getItem('token');
