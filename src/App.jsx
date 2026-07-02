@@ -41,7 +41,9 @@ import api from './services/api';
 export default function App() {
   const [rows, setRows] = useState([]);
   const [status, setStatus] = useState('กำลังโหลดข้อมูลจาก Google Sheets...');
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('sessionExpired') ? 'responses' : 'overview';
+  });
   const [selectedRow, setSelectedRow] = useState(null);
   const [selectedGender, setSelectedGender] = useState('all');
   const [user, setUser] = useState(null);
@@ -58,16 +60,53 @@ export default function App() {
       setResetToken(token);
     }
 
-    const savedToken = localStorage.getItem('token');
-    if (savedToken) {
-      api.get('/me')
-        .then(data => { if (data.user) setUser(data.user); })
-        .catch(() => localStorage.removeItem('token'));
-    }
+    const checkSessionServer = () => {
+      const savedToken = localStorage.getItem('token');
+      if (savedToken) {
+        api.get('/me')
+          .then(data => { if (data.user) setUser(data.user); })
+          .catch(() => localStorage.removeItem('token'));
+      }
+    };
+
+    checkSessionServer(); // Initial check
+
+    // Check token expiration locally every 5 seconds (more reliable than setTimeout for background tabs)
+    const localCheckId = setInterval(() => {
+      const savedToken = localStorage.getItem('token');
+      if (savedToken) {
+        try {
+          const payload = JSON.parse(atob(savedToken.split('.')[1]));
+          if (payload.exp * 1000 <= Date.now()) {
+            window.dispatchEvent(new Event('auth-expired'));
+          }
+        } catch (e) {}
+      }
+    }, 5000);
+    
+    // Check with server every 1 minute just in case local time is out of sync
+    const serverCheckId = setInterval(checkSessionServer, 60 * 1000);
+
+    let isExpired = false;
+    const handleAuthExpired = () => {
+      if (isExpired) return;
+      isExpired = true;
+      alert('เซสชันของคุณหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+      localStorage.setItem('sessionExpired', 'true');
+      window.location.reload();
+    };
+    window.addEventListener('auth-expired', handleAuthExpired);
+    
+    return () => {
+      clearInterval(localCheckId);
+      clearInterval(serverCheckId);
+      window.removeEventListener('auth-expired', handleAuthExpired);
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
     setUser(null);
   };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 import api from '../services/api';
 
@@ -11,6 +11,13 @@ export function AuthView({ onLoginSuccess }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (localStorage.getItem('sessionExpired')) {
+      setError('เซสชันของคุณหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+      localStorage.removeItem('sessionExpired');
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,6 +64,9 @@ export function AuthView({ onLoginSuccess }) {
       
       if (isLoginMode) {
         localStorage.setItem('token', data.token);
+        if (data.refresh_token) {
+          localStorage.setItem('refresh_token', data.refresh_token);
+        }
         onLoginSuccess(data.user);
       } else {
         setIsLoginMode(true);
