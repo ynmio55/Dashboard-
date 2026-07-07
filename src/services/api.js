@@ -1,7 +1,14 @@
 const getDefaultApiUrl = () => {
   const { hostname } = window.location;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:8081/api';
+  // If accessing locally or via local network IP (192.168.x.x, 10.x.x.x, etc.)
+  if (
+    hostname === 'localhost' || 
+    hostname === '127.0.0.1' || 
+    hostname.startsWith('192.168.') || 
+    hostname.startsWith('10.') || 
+    hostname.startsWith('100.') // Tailscale/VPN IPs
+  ) {
+    return `http://${hostname}:8081/api`;
   }
   return 'https://api-sknhos.moph.go.th/api';
 };
